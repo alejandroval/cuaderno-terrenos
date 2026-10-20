@@ -322,8 +322,9 @@ var TFIELDS=[
 var ZFIELDS=[
   {g:'Zona',f:[
    {k:'nombre',l:'Nombre',t:'text',full:1},
-   {k:'ref_min',l:'Precio de referencia mínimo (€/ha)',t:'num'},
-   {k:'ref_max',l:'Precio de referencia máximo (€/ha)',t:'num'},
+   {k:'moneda',l:'Moneda de la zona',t:'sel',o:{EUR:'Euros (Italia)',COP:'Pesos colombianos (Colombia)'},def:'EUR'},
+   {k:'ref_min',l:'Precio de referencia mínimo (por ha)',t:'num'},
+   {k:'ref_max',l:'Precio de referencia máximo (por ha)',t:'num'},
    {k:'aptitud',l:'Aptitud agrícola (1 a 5)',t:'rate'},
    {k:'fuente',l:'Fuente de los precios',t:'area',full:1},
    {k:'clima',l:'Clima',t:'area',full:1},
@@ -351,16 +352,43 @@ var CROPS=[
  ['Patata',300,600,1300,1500,'La patata de altura (Fucino, Sila) sale limpia y se paga mejor.'],
  ['Apicultura (miel)',0,0,1200,1800,'Funciona en cualquier altura: cambian las floraciones y las mieles.']
 ];
-function altBanda(a){
+/* Colombia: [nombre, mín. posible, mín. óptimo, máx. óptimo, máx. posible, comentario]. Solo café y aguacate vienen de fuentes citadas; el resto es orientativo. */
+var CROPS_CO=[
+ ['Café',900,1300,1800,2000,'Fuente: Cenicafé (óptimo 1.300–1.800 m). Por debajo baja la calidad; por encima madura muy lento.'],
+ ['Aguacate Hass',1200,1800,2300,2500,'Fuentes: UPRA (se adapta entre 1.200 y 2.300 m) y Bernal (1.800–2.500 m). Rango óptimo = zona donde coinciden.'],
+ ['Cacao',0,0,800,1200,'Orientativo: tierras cálidas y húmedas. Necesita sombra y lluvia bien repartida.'],
+ ['Plátano y banano',0,0,1000,1800,'Orientativo: crece mejor en clima cálido; en altura se alarga mucho el ciclo.'],
+ ['Cítricos (naranja, limón, mandarina)',0,0,1000,1500,'Orientativo: mejor calidad en clima cálido y templado bajo.'],
+ ['Piña',0,0,900,1500,'Orientativo: clima cálido, suelos sueltos y bien drenados.'],
+ ['Maracuyá',0,0,1000,1400,'Orientativo: clima cálido; le perjudica el frío. La gulupa (parecida) prefiere más altura.'],
+ ['Gulupa y granadilla',1500,1800,2300,2500,'Orientativo: clima templado a frío, muy sensible a plagas y enfermedades.'],
+ ['Caña panelera',800,1000,1600,2000,'Orientativo: se produce panela en clima templado, con trapiche cercano.'],
+ ['Mora de Castilla',1500,1800,2400,3000,'Orientativo: clima frío moderado; da producción casi todo el año.'],
+ ['Lulo y tomate de árbol',1600,1800,2400,2800,'Orientativo: clima frío moderado; no soporta heladas ni exceso de humedad.'],
+ ['Fresa',1500,2000,2800,3000,'Orientativo: clima frío; requiere buen manejo de enfermedades.'],
+ ['Flores de corte',1800,2000,2800,3000,'Orientativo: la zona del Oriente antioqueño y la sabana de Bogotá concentran la producción.'],
+ ['Papa',1800,2200,3000,3400,'Orientativo: clima frío; sensible al mildiu (gota).'],
+ ['Maíz y frijol',0,300,1800,2400,'Orientativo: muy flexibles; el frijol voluble sube más que el maíz.'],
+ ['Pastos y ganadería',0,0,2800,3200,'Orientativo: en clima cálido, ganadería de carne y doble propósito; en frío, leche con kikuyo.'],
+ ['Apicultura (miel)',0,0,2500,3000,'Funciona en casi cualquier altura: cambian las floraciones y las mieles.']
+];
+function cropsList(p){return p==='Colombia'?CROPS_CO:CROPS}
+function altBanda(a,p){
   if(a==null||isNaN(a))return null;
+  if(p==='Colombia'){
+    if(a<1000)return{k:'co_calido',l:'Piso cálido (0–1.000 m)',c:'good'};
+    if(a<2000)return{k:'co_templado',l:'Piso templado (1.000–2.000 m)',c:'good'};
+    if(a<3000)return{k:'co_frio',l:'Piso frío (2.000–3.000 m)',c:'warn'};
+    return{k:'co_paramo',l:'Páramo (más de 3.000 m)',c:'bad'};
+  }
   if(a<200)return{k:'bajo',l:'Llano y colina baja',c:'good'};
   if(a<500)return{k:'colina',l:'Colina',c:''};
   if(a<800)return{k:'alta',l:'Colina alta',c:'warn'};
   return{k:'monte',l:'Montaña',c:'bad'};
 }
-function cropsFor(a){
+function cropsFor(a,p){
   var r={opt:[],jus:[],no:[]};
-  CROPS.forEach(function(c){
+  cropsList(p).forEach(function(c){
     var x={n:c[0],t:c[5],min:c[1],omin:c[2],omax:c[3],max:c[4]};
     if(a>=c[2]&&a<=c[3])r.opt.push(x);
     else if(a>=c[1]&&a<=c[4])r.jus.push(x);
@@ -373,25 +401,26 @@ function cropWhy(x,a){
   if(a>x.max)return 'Por encima de '+x.max+' m ya no es viable';
   return '';
 }
-function altHtml(a){
+function altHtml(a,p){
   if(a==null||isNaN(a))return '<h2>Cultivos según la altitud</h2><p class="muted">Escribe la altitud del terreno (en metros sobre el nivel del mar) para ver qué cultivos encajan.</p>';
-  var b=altBanda(a),r=cropsFor(a);
+  var b=altBanda(a,p),r=cropsFor(a,p);
   function lst(arr,cls,empty,why){
     if(!arr.length)return '<p class="muted">'+empty+'</p>';
     return '<ul class="crops">'+arr.map(function(x){return '<li class="'+cls+'"><b>'+esc(x.n)+'</b><span>'+esc(why?(cropWhy(x,a)||x.t):x.t)+'<em>Óptimo '+x.omin+'–'+x.omax+' m · posible hasta '+x.min+'–'+x.max+' m</em></span></li>'}).join('')+'</ul>';
   }
-  return '<h2>Cultivos según la altitud</h2><p class="muted"><b>'+fmt(a)+' m</b> · '+b.l+'. Referencia orientativa: el microclima de la parcela (orientación, valle, viento) puede cambiar el resultado.</p>'+
+  return '<h2>Cultivos según la altitud</h2><p class="muted"><b>'+fmt(a)+' m</b> · '+b.l+'. Referencia orientativa: el microclima de la parcela (orientación, valle, viento) puede cambiar el resultado.'+(p==='Colombia'?' En Colombia manda el piso térmico; solo café y aguacate tienen fuente citada, el resto son rangos generales.':'')+'</p>'+
    '<h3 class="sh good">Van bien ('+r.opt.length+')</h3>'+lst(r.opt,'good','Ninguno de la lista queda en su rango óptimo.')+
    '<h3 class="sh warn">Posibles, con más riesgo ('+r.jus.length+')</h3>'+lst(r.jus,'warn','Ninguno.')+
    '<h3 class="sh bad">No recomendados ('+r.no.length+')</h3>'+lst(r.no,'bad','Ninguno.',true);
 }
 function altAviso(t){
   var a=t.altitud;if(a==null||isNaN(a)||!t.cultivo)return '';
-  var c=String(t.cultivo).toLowerCase(),out=[];
+  var c=String(t.cultivo).toLowerCase(),out=[],co=t.pais==='Colombia';
   var map=[['oliv','Olivo'],['avellan|noccio|hazel','Avellano'],['\\bvid|vigne|\\buva','Vid'],['noce|nogal|nuez','Nogal'],['mandorl|almendr','Almendro'],['kiwi','Kiwi'],['castagn|casta','Castaño']];
+  if(co)map=[['caf','Café'],['aguacate|avocado|hass','Aguacate Hass'],['cacao','Cacao'],['pl[aá]tano|banano','Plátano y banano'],['mora','Mora de Castilla'],['fresa','Fresa'],['papa','Papa'],['ca[nñ]a|panela','Caña panelera'],['maracuy','Maracuyá'],['lulo|tomate de [aá]rbol','Lulo y tomate de árbol']];
   map.forEach(function(m){
     if(new RegExp(m[0]).test(c)){
-      var cr=CROPS.filter(function(x){return x[0]===m[1]})[0];
+      var cr=cropsList(t.pais).filter(function(x){return x[0]===m[1]})[0];
       if(cr&&(a<cr[1]||a>cr[4]))out.push(m[1]+' a '+fmt(a)+' m queda fuera de su rango');
     }
   });
@@ -456,7 +485,7 @@ function tagsFor(t){
   if(t.acceso==='asfalto')a.push(['Asfalto','good']);else if(t.acceso==='sterrato')a.push(['Camino de tierra','']);else if(t.acceso==='sentiero')a.push(['Solo sendero','bad']);
   if(t.parque==='si')a.push(['Parque nacional','warn']);
   if(t.pais==='Colombia')a.push(['Colombia','warn']);
-  var ab=altBanda(t.altitud);if(ab)a.push([fmt(t.altitud)+' m',ab.c]);else a.push(['Altitud sin dato','']);
+  var ab=altBanda(t.altitud,t.pais);if(ab)a.push([fmt(t.altitud)+' m',ab.c]);else a.push(['Altitud sin dato','']);
   if(altAviso(t))a.push(['Cultivo fuera de rango de altura','bad']);
   if(t.edif==='no_edificable')a.push(['No edificable','']);else if(t.edif==='edificable')a.push(['Edificable','warn']);else a.push(['Edificabilidad sin dato','']);
   return a.map(function(x){return '<span class="tag '+x[1]+'">'+esc(x[0])+'</span>'}).join('');
@@ -636,7 +665,7 @@ function visibles(){
     if(S.f.zona&&t.zona!==S.f.zona)return false;
     if(S.f.edif&&(t.edif||'desconocido')!==S.f.edif)return false;
     if(S.f.pais&&(t.pais||'Italia')!==S.f.pais)return false;
-    if(S.f.alt){var bb=altBanda(t.altitud);if((bb?bb.k:'sin')!==S.f.alt)return false}
+    if(S.f.alt){var bb=altBanda(t.altitud,t.pais);if((bb?bb.k:'sin')!==S.f.alt)return false}
     if(q&&[t.nombre,t.comune,t.provincia,t.cultivo,t.notas].join(' ').toLowerCase().indexOf(q)<0)return false;
     return true;
   }).map(function(t){return{t:t,s:score(t),p:ppha(t)}});
@@ -659,7 +688,7 @@ function vTerrenos(){
   Object.keys(ESTADOS).forEach(function(k){chips+='<button class="chip" data-act="fest" data-v="'+k+'" aria-pressed="'+(S.f.estado===k)+'">'+ESTADOS[k]+'<span class="mono">'+(counts[k]||0)+'</span></button>'});
   var zopts='<option value="">Todas las zonas</option>'+S.zonas.map(function(z){return '<option value="'+esc(z.id)+'"'+(S.f.zona===z.id?' selected':'')+'>'+esc(z.nombre)+'</option>'}).join('');
   var eopts=[['','Toda edificabilidad'],['no_edificable','No edificable'],['edificable','Edificable'],['desconocido','Sin dato']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.edif===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('');
-  var aopts=[['','Toda altitud'],['bajo','Menos de 200 m'],['colina','200–500 m'],['alta','500–800 m'],['monte','Más de 800 m'],['sin','Sin dato']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.alt===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('');
+  var aopts=[['','Toda altitud'],['bajo','Menos de 200 m'],['colina','200–500 m'],['alta','500–800 m'],['monte','Más de 800 m'],['co_calido','Colombia: cálido (<1.000 m)'],['co_templado','Colombia: templado (1.000–2.000 m)'],['co_frio','Colombia: frío (2.000–3.000 m)'],['co_paramo','Colombia: páramo (>3.000 m)'],['sin','Sin dato']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.alt===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('');
   var popts=[['','Todos los países'],['Italia','Italia'],['Colombia','Colombia']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.pais===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('');
   var oopts=[['score','Mejor puntuación'],['pha','Menor €/ha'],['precio','Menor precio'],['m2','Mayor superficie'],['nombre','Nombre']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.orden===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('');
   var h='<div class="bar"><input class="grow" type="text" id="q" placeholder="Buscar por nombre, comune o cultivo" value="'+esc(S.f.q)+'" aria-label="Buscar"><select id="fz" aria-label="Zona">'+zopts+'</select><select id="fe" aria-label="Edificabilidad">'+eopts+'</select><select id="fa" aria-label="Altitud">'+aopts+'</select><select id="fpa" aria-label="País">'+popts+'</select><select id="fo" aria-label="Ordenar">'+oopts+'</select></div>';
@@ -677,7 +706,7 @@ function vTerrenos(){
       '<div><dt>Superficie</dt><dd>'+(t.m2>0?fmt(t.m2)+' m²':'—')+'<span class="sub">'+ha(t.m2)+'</span></dd></div>'+
       '<div><dt>€ por ha</dt><dd>'+(p!=null?fmt(p):'—')+'</dd></div></dl>'+
       '<div class="tags">'+tagsFor(t)+'</div>'+
-      (t.altitud!=null&&!isNaN(t.altitud)?'<p class="cropline"><b>Van bien a '+fmt(t.altitud)+' m:</b> '+esc(cropsFor(Number(t.altitud)).opt.slice(0,5).map(function(x){return x.n.split(' (')[0]}).join(', ')||'ninguno de la lista')+'</p>':'')+
+      (t.altitud!=null&&!isNaN(t.altitud)?'<p class="cropline"><b>Van bien a '+fmt(t.altitud)+' m:</b> '+esc(cropsFor(Number(t.altitud),t.pais).opt.slice(0,5).map(function(x){return x.n.split(' (')[0]}).join(', ')||'ninguno de la lista')+'</p>':'')+
       '<div class="card-foot"><span class="pill '+est+'">'+ESTADOS[est]+'</span>'+(t.url?'<a href="'+esc(t.url)+'" target="_blank" rel="noopener" data-stop="1">Ver anuncio ↗</a>':'')+'</div></article>';
   }).join('')+'</div>';
   return h;
@@ -702,8 +731,8 @@ function vComparar(){
   [['relieve','Relieve'],['acceso','Acceso'],['agua','Agua'],['luz','Electricidad'],['parque','Parque'],['edif','Edificabilidad']].forEach(function(p){
     h+=row(p[1],rows.map(function(r){return r.t[p[0]]||'desconocido'}),function(v){return esc(OPT[p[0]][v]||v)});
   });
-  h+=row('Altitud',rows.map(function(r){return r.t.altitud!=null&&!isNaN(r.t.altitud)?Number(r.t.altitud):null}),function(v){return v==null?'—':'<span class="mono">'+fmt(v)+' m</span> <span class="muted">'+altBanda(v).l+'</span>'});
-  h+=row('Cultivos que van bien',rows.map(function(r){return r.t.altitud!=null&&!isNaN(r.t.altitud)?cropsFor(Number(r.t.altitud)).opt.map(function(x){return x.n}).join(', '):null}),function(v){return v==null?'—':esc(v||'Ninguno')});
+  h+=row('Altitud',rows.map(function(r){return r.t.altitud!=null&&!isNaN(r.t.altitud)?Number(r.t.altitud):null}),function(v,i){return v==null?'—':'<span class="mono">'+fmt(v)+' m</span> <span class="muted">'+altBanda(v,rows[i].t.pais).l+'</span>'});
+  h+=row('Cultivos que van bien',rows.map(function(r){return r.t.altitud!=null&&!isNaN(r.t.altitud)?cropsFor(Number(r.t.altitud),r.t.pais).opt.map(function(x){return x.n}).join(', '):null}),function(v){return v==null?'—':esc(v||'Ninguno')});
   h+=row('Qué hay plantado',rows.map(function(r){return r.t.cultivo}),function(v){return esc(v||'—')});
   h+=row('Mercado del cultivo',rows.map(function(r){return r.t.mercado!=null&&r.t.mercado!==''?Number(r.t.mercado):null}),function(v){return v==null?'—':'<span class="mono">'+v+'/5</span>'},'max');
   h+=row('Ventajas',rows.map(function(r){return r.t.ventajas}),function(v){return esc(v||'—')});
@@ -725,8 +754,11 @@ function vZonas(){
   h+='<section class="panel"><h2>Cultivos según la altitud</h2><p class="muted">Rango en metros sobre el nivel del mar. La barra clara es el rango posible y la oscura el rango óptimo. Orientativo para el centro de Italia (Lazio, Umbria, Abruzzo). No incluye cítricos: fuera de la costa el invierno los daña.</p><div class="chart"><div class="axis alt"><span>0</span><span>400</span><span>800</span><span>1.200 · 1.800</span></div>'+
    CROPS.map(function(c){var M=1800;return '<div class="arow"><b>'+esc(c[0])+'</b><div class="atrack"><i class="pos" style="left:'+c[1]/M*100+'%;width:'+(c[4]-c[1])/M*100+'%"></i><i class="opt" style="left:'+c[2]/M*100+'%;width:'+Math.max(.6,(c[3]-c[2])/M*100)+'%"></i></div><span class="mono">'+c[2]+'–'+c[3]+' m</span></div>'}).join('')+
    '</div><p class="hint">Son rangos agronómicos generales, no datos oficiales de cada parcela. Confirma con un agrónomo local (y con las estaciones agrometeorológicas de la región) antes de plantar.</p></section>';
+  h+='<section class="panel"><h2>Cultivos según la altitud · Colombia</h2><p class="muted">Rango en metros sobre el nivel del mar. Barra clara: rango posible; oscura: óptimo. Pisos térmicos: cálido hasta 1.000 m, templado 1.000–2.000, frío 2.000–3.000, páramo desde 3.000. Solo café (Cenicafé) y aguacate (UPRA/Bernal) tienen fuente citada; el resto es orientativo.</p><div class="chart"><div class="axis alt"><span>0</span><span>1.000</span><span>2.000</span><span>3.000 · 3.400</span></div>'+
+   CROPS_CO.map(function(c){var M=3400;return '<div class="arow"><b>'+esc(c[0])+'</b><div class="atrack"><i class="pos" style="left:'+c[1]/M*100+'%;width:'+(c[4]-c[1])/M*100+'%"></i><i class="opt" style="left:'+c[2]/M*100+'%;width:'+Math.max(.6,(c[3]-c[2])/M*100)+'%"></i></div><span class="mono">'+c[2]+'–'+c[3]+' m</span></div>'}).join('')+
+   '</div><p class="hint">Son rangos generales, no datos oficiales de cada finca. Antes de sembrar confirma con la UMATA del municipio, el ICA o la Federación del cultivo.</p></section>';
   h+='<section class="panel"><h2>Precio de referencia frente a tus terrenos</h2><p class="muted">La banda azul es el rango de referencia de la zona en € por hectárea. Cada punto es un terreno. Un cuadrado pegado al borde derecho supera los 40.000 €/ha (parcelas pequeñas con servicios o edificaciones).</p><div class="chart"><div class="axis"><span>0</span><span>10.000</span><span>20.000</span><span>30.000 · 40.000</span></div>';
-  S.zonas.forEach(function(z){
+  S.zonas.filter(function(z){return z.moneda!=='COP'}).forEach(function(z){
     var pts=S.terrenos.filter(function(t){return t.zona===z.id&&ppha(t)!=null}).map(function(t){return{t:t,p:ppha(t)}}).sort(function(a,b){return a.p-b.p});
     var left=clamp((z.ref_min||0)/MAX*100,0,100),w=clamp(((z.ref_max||0)-(z.ref_min||0))/MAX*100,0,100-left);
     var rng=z.ref_min===z.ref_max?fmt(z.ref_min)+' (media)':fmt(z.ref_min)+' – '+fmt(z.ref_max);
@@ -737,6 +769,17 @@ function vZonas(){
       [['Fuente',z.fuente],['Clima',z.clima],['Cultivos con mercado',z.cultivos],['Normativa',z.normativa]].map(function(d){return d[1]?'<div><dt>'+d[0]+'</dt><dd>'+esc(d[1])+'</dd></div>':''}).join('')+
       '</dl><p><button class="btn" data-act="zedit" data-id="'+esc(z.id)+'">Editar zona</button></p></details></div>';
   });
+  var zco=S.zonas.filter(function(z){return z.moneda==='COP'});
+  if(zco.length){
+    h+='</div><h3 class="sh" style="margin-top:16px">Colombia (en pesos, por hectárea)</h3><div class="chart">';
+    zco.forEach(function(z){
+      var n=S.terrenos.filter(function(t){return t.zona===z.id}).length;
+      h+='<div class="zrow"><div class="zhead"><b>'+esc(z.nombre)+'</b><span>'+fmt(z.ref_min)+' – '+fmt(z.ref_max)+' COP/ha · aptitud '+(z.aptitud||'—')+'/5 · '+n+' terrenos</span></div>'+
+        '<details class="zd"><summary>Detalle de la zona</summary><dl>'+
+        [['Fuente',z.fuente],['Clima',z.clima],['Cultivos con mercado',z.cultivos],['Normativa',z.normativa]].map(function(d){return d[1]?'<div><dt>'+d[0]+'</dt><dd>'+esc(d[1])+'</dd></div>':''}).join('')+
+        '</dl><p><button class="btn" data-act="zedit" data-id="'+esc(z.id)+'">Editar zona</button></p></details></div>';
+    });
+  }
   h+='</div><p class="bar" style="margin-top:12px"><button class="btn" data-act="znueva">Nueva zona</button></p><p class="hint">Los rangos de Sardegna y Basilicata son medias regionales de CREA (2020). Los de Lazio, Umbria y Abruzzo son orientativos: edítalos cuando tengas datos mejores.</p></section></div>';
   return h;
 }
@@ -802,7 +845,7 @@ function drawDrawer(){
   if(d.type==='terreno'){
     var t=d.id?(S.terrenos.filter(function(x){return x.id===d.id})[0]||{}):(d.prefill||{});
     var body='<section class="panel" id="live">'+liveHtml(t)+'</section>'+
-      '<section class="panel" id="altp">'+altHtml(t.altitud)+(altAviso(t)?'<p class="warnline">'+esc(altAviso(t))+'</p>':'')+'</section>'+formHtml(TFIELDS,t)+
+      '<section class="panel" id="altp">'+altHtml(t.altitud,t.pais)+(altAviso(t)?'<p class="warnline">'+esc(altAviso(t))+'</p>':'')+'</section>'+formHtml(TFIELDS,t)+
       '<section class="panel"'+(t.pais==='Colombia'?' hidden':'')+' id="costp"><h2>Coste de compra como particular</h2><div id="cost">'+costHtml(t.precio)+'</div><label class="chk" style="margin-top:8px"><span style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="agencia" checked> Incluir comisión de agencia</span></label><p class="hint">Estimación. El notaio confirma las cifras finales.</p></section>';
     if(d.id){var ck=t.checks||{},LIST=t.pais==='Colombia'?CHECK_CO:CHECK;body+='<section class="panel"><h2>Checklist legal'+(t.pais==='Colombia'?' (Colombia)':'')+'</h2><div class="chk">'+LIST.map(function(c){return '<label><input type="checkbox" data-act="chk" data-k="'+c[0]+'"'+(ck[c[0]]?' checked':'')+'> <span>'+esc(c[1])+'</span></label>'}).join('')+'</div></section>'}
     var sub=t.url?'<a href="'+esc(t.url)+'" target="_blank" rel="noopener" style="color:var(--accent)">Abrir anuncio ↗</a>':'';
@@ -823,7 +866,7 @@ function liveUpdate(){
   var d=S.drawer;if(!d||d.type!=='terreno'||!$('live'))return;
   var t=collect(TFIELDS);$('live').innerHTML=liveHtml(t);$('cost').innerHTML=costHtml(t.precio);
   if($('costp'))$('costp').hidden=(t.pais==='Colombia');
-  if($('altp'))$('altp').innerHTML=altHtml(t.altitud)+(altAviso(t)?'<p class="warnline">'+esc(altAviso(t))+'</p>':'');
+  if($('altp'))$('altp').innerHTML=altHtml(t.altitud,t.pais)+(altAviso(t)?'<p class="warnline">'+esc(altAviso(t))+'</p>':'');
 }
 async function guardarTerreno(){
   var d=S.drawer,v=collect(TFIELDS);
