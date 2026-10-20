@@ -188,6 +188,19 @@ body{margin:0}
 .atrack .opt{background:var(--accent)}
 @media(max-width:560px){.crops li{grid-template-columns:1fr}.arow{grid-template-columns:1fr 70px}.arow .atrack{grid-column:1/3}}
 .cropline{margin:8px 0 0;font-size:12.5px;color:var(--ink-2)}.cropline b{color:var(--ink);font-weight:500}
+
+.steps{margin:6px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:8px;font-size:14.5px}
+.steps li{padding-left:2px}
+.calwrap{overflow-x:auto}
+.cal{border-collapse:collapse;width:100%;min-width:560px;font-size:12.5px}
+.cal th{font:400 11px var(--mono);color:var(--ink-3);padding:4px 2px;text-align:center}
+.cal td{padding:3px 2px;text-align:center}
+.cal td:first-child{text-align:left;white-space:nowrap;padding-right:8px;font-size:13px}
+.cal i,.legend i{display:inline-block;width:100%;min-width:14px;height:14px;border-radius:3px;background:var(--surface-2)}
+.cal i.c1,.legend i.c1{background:var(--accent-soft)}.cal i.c2,.legend i.c2{background:#7d9fcc}.cal i.c3,.legend i.c3{background:var(--accent)}
+.legend{list-style:none;margin:8px 0 0;padding:0;display:flex;gap:14px;font-size:12px;color:var(--ink-2)}
+.legend i{width:14px}.legend li{display:flex;gap:6px;align-items:center}
+.calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px}
 </style>
 </head><body>
 <div id="login" hidden></div>
@@ -205,6 +218,7 @@ body{margin:0}
     <button data-tab="terrenos">Terrenos</button>
     <button data-tab="comparar">Comparar <span class="n" id="ncmp" hidden></span></button>
     <button data-tab="zonas">Zonas y normativa</button>
+    <button data-tab="biblioteca">Biblioteca</button>
     <button data-tab="criterios">Criterios</button><button data-act="salir" style="margin-left:auto">Salir</button>
   </nav>
   <main id="view"></main>
@@ -225,7 +239,8 @@ var OPT={
   luz:{desconocido:'Sin dato',si:'Con electricidad',no:'Sin electricidad'},
   parque:{desconocido:'Sin dato',si:'Dentro de parque',no:'Fuera de parque'},
   edif:{desconocido:'Sin dato',no_edificable:'No edificable (agrícola)',edificable:'Edificable'},
-  fuente:{Immobiliare:'Immobiliare.it',Idealista:'Idealista',Subito:'Subito',Otro:'Otro'}
+  pais:{Italia:'Italia (EUR)',Colombia:'Colombia (COP)'},
+  fuente:{Immobiliare:'Immobiliare.it',Idealista:'Idealista',Subito:'Subito',Fincaraiz:'Fincaraíz',Metrocuadrado:'Metrocuadrado',Ciencuadras:'Ciencuadras',MercadoLibre:'Mercado Libre',Otro:'Otro'}
 };
 var SC={
   relieve:{llano:1,leve:.8,medio:.45,ladera:.15},
@@ -243,6 +258,20 @@ var FACT=[
   {k:'mercado',l:'Mercado del cultivo',d:'Valoración manual de 1 a 5 de lo sólida que es la salida comercial de lo que hay o de lo que se puede plantar.'},
   {k:'aptitud',l:'Aptitud agrícola de la zona',d:'Valoración de 1 a 5 de la zona de referencia. Se edita en Zonas y normativa.'},
   {k:'restricciones',l:'Restricciones (parque)',d:'Fuera de parque 100%, dentro de parque nacional 20%.'}
+];
+var CHECK_CO=[
+  ['co_tradicion','Certificado de tradición y libertad (reciente, menos de 30 días): propietario, gravámenes, embargos, hipotecas'],
+  ['co_escritura','Escritura pública y matrícula inmobiliaria: coinciden con el vendedor y el predio'],
+  ['co_catastro','Ficha o cédula catastral (IGAC o catastro local): cabida y linderos coinciden con lo que se vende'],
+  ['co_pot','POT, PBOT o EOT del municipio: uso del suelo rural y lo que se puede hacer'],
+  ['co_uaf','Unidad Agrícola Familiar (Ley 160 de 1994) y que el predio no sea baldío (Agencia Nacional de Tierras)'],
+  ['co_ambiental','Restricciones ambientales: reserva forestal, ronda hídrica, páramo, parque natural, resguardo o consejo comunitario'],
+  ['co_agua','Agua: concesión de la autoridad ambiental (CAR) o acueducto veredal, y cuánto cuesta'],
+  ['co_acceso','Acceso y servidumbres por escrito; estado de la vía veredal en lluvias'],
+  ['co_predial','Paz y salvo de impuesto predial y valorización'],
+  ['co_afectacion','Afectación a vivienda familiar o patrimonio de familia del vendedor'],
+  ['co_costos','Costos de notaría, registro, beneficencia y retención cotizados por escrito'],
+  ['co_visita','Visita al predio, análisis de suelo y avalúo comercial antes de firmar']
 ];
 var PESOS0={precio:3,servicios:2,acceso:2,relieve:1.5,superficie:2,mercado:3,aptitud:2,restricciones:1};
 var CHECK=[
@@ -267,10 +296,11 @@ var TFIELDS=[
   {k:'estado',l:'Estado',t:'sel',o:ESTADOS,def:'por_revisar'},
   {k:'fecha_anuncio',l:'Fecha del anuncio',t:'text'}]},
  {g:'Ubicación y precio',f:[
-  {k:'comune',l:'Comune',t:'text'},
-  {k:'provincia',l:'Provincia',t:'text'},
+  {k:'pais',l:'País y moneda',t:'sel',o:OPT.pais,def:'Italia'},
+  {k:'comune',l:'Comune / municipio',t:'text'},
+  {k:'provincia',l:'Provincia / departamento',t:'text'},
   {k:'zona',l:'Zona de referencia',t:'zona',full:1},
-  {k:'precio',l:'Precio (€)',t:'num'},
+  {k:'precio',l:'Precio (€ o COP según el país)',t:'num'},
   {k:'m2',l:'Superficie (m²)',t:'num'},
   {k:'precio_nota',l:'Nota sobre el precio',t:'text',full:1},
   {k:'altitud',l:'Altitud (m s. n. m.)',t:'num'},
@@ -368,7 +398,7 @@ function altAviso(t){
   return out.join('. ');
 }
 var S={view:'terrenos',terrenos:[],zonas:[],pesos:null,db:null,sample:null,downloads:null,ready:false,dbOff:false,err:null,
-  f:{q:'',estado:'',zona:'',edif:'',alt:'',orden:'score'},compare:[],drawer:null};
+  f:{q:'',estado:'',zona:'',edif:'',alt:'',pais:'',orden:'score'},compare:[],drawer:null};
 try{var cs=JSON.parse(localStorage.getItem('ct_compare')||'[]');if(Array.isArray(cs))S.compare=cs.slice(0,4)}catch(e){}
 var Q={};
 function enqueue(key,fn){var p=(Q[key]||Promise.resolve()).then(fn);Q[key]=p.catch(function(){});return p}
@@ -377,6 +407,8 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){retur
 var nf=new Intl.NumberFormat('de-DE',{maximumFractionDigits:0});
 function fmt(n){return n==null||isNaN(n)?'—':nf.format(Math.round(n))}
 function eur(n){return n==null||isNaN(n)?'—':fmt(n)+' €'}
+function cop(n){return n==null||isNaN(n)?'—':fmt(n)+' COP'}
+function money(t,n){return t&&t.pais==='Colombia'?cop(n):eur(n)}
 function ha(m2){return m2>0?(m2/10000).toLocaleString('de-DE',{maximumFractionDigits:2})+' ha':''}
 function clamp(x,a,b){return Math.max(a,Math.min(b,x))}
 function parseNum(s){
@@ -423,6 +455,7 @@ function tagsFor(t){
   if(t.luz==='si')a.push(['Electricidad','good']);else if(t.luz==='no')a.push(['Sin electricidad','bad']);
   if(t.acceso==='asfalto')a.push(['Asfalto','good']);else if(t.acceso==='sterrato')a.push(['Camino de tierra','']);else if(t.acceso==='sentiero')a.push(['Solo sendero','bad']);
   if(t.parque==='si')a.push(['Parque nacional','warn']);
+  if(t.pais==='Colombia')a.push(['Colombia','warn']);
   var ab=altBanda(t.altitud);if(ab)a.push([fmt(t.altitud)+' m',ab.c]);else a.push(['Altitud sin dato','']);
   if(altAviso(t))a.push(['Cultivo fuera de rango de altura','bad']);
   if(t.edif==='no_edificable')a.push(['No edificable','']);else if(t.edif==='edificable')a.push(['Edificable','warn']);else a.push(['Edificabilidad sin dato','']);
@@ -435,6 +468,81 @@ function statusHtml(){
   else if(!S.ready){el.className='off';el.innerHTML='<i></i><span>Conectando…</span>'}
   else{el.className='';el.innerHTML='<i></i><span>Guardado en Supabase · '+S.terrenos.length+' terrenos</span>'}
 }
+
+/* ---------- Biblioteca ---------- */
+var MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+/* intensidad por mes: 0 nada, 1 poco, 2 normal, 3 pico */
+var CAL_API=[
+ ['Revisar la colmena',[0,1,2,3,3,3,2,2,2,1,0,0],'Cada 7–10 días en primavera; cada 15 en verano y otoño.'],
+ ['Alimentación de estímulo',[0,2,2,0,0,0,0,0,0,0,0,0],'Jarabe ligero o candito si hay poca reserva a fin de invierno.'],
+ ['Control de enjambrazón',[0,0,1,3,3,2,0,0,0,0,0,0],'Espacio, alzas y cuadros nuevos a tiempo.'],
+ ['Alzas (melari) puestas',[0,0,0,2,3,3,2,1,0,0,0,0],'Según la floración local: acacia, tilo, castaño, millefiori.'],
+ ['Cosecha de miel',[0,0,0,0,2,3,3,1,0,0,0,0],'Con la miel operculada y con extractor alquilado o propio.'],
+ ['Tratamiento varroa',[0,0,0,0,0,0,3,3,1,0,1,3],'Verano tras la cosecha; ácido oxálico en invierno sin cría. Mide la caída de ácaros.'],
+ ['Alimentación de invierno',[0,0,0,0,0,0,0,1,3,2,0,0],'Jarabe más denso al final del verano para que haya reservas.'],
+ ['Reposo y mínimas molestias',[3,2,0,0,0,0,0,0,0,1,3,3],'Solo observar el vuelo y proteger la piquera de ratones.']
+];
+var VARROA_TAB=[
+ ['Tras la cosecha, fin de verano','Blocco di covata y luego ácido oxálico, o amitraz (Apivar: 2 tiras durante 42 días)','Todo el apiario a la vez'],
+ ['Verano (julio)','Timol (Apiguard, Thymovar) o ácido fórmico (MAQS, Formicpro)','Timol: ideal 20–25 °C, no pasar de 30 °C. Fórmico: 10–30 °C según el producto'],
+ ['Hasta mediados de agosto','Tratar antes de mediados de agosto si hay néctar','Cuanto antes, mejor'],
+ ['Otoño-invierno, sin cría','Ácido oxálico (API-Bioxal por sublimación)','Con más de 10 °C y abejas volando; sin cría'],
+ ['Primavera','Solo con control de caída natural (VarroMed si hay más de 1 ácaro al día)','Repetir si caen más de 10 ácaros en 6 días']
+];
+var PRESUPUESTO=[
+ ['Colmenas nuevas completas (con alza y cuadros), unas 100 € cada una',100,100,'fuente'],
+ ['Enjambres de 5 panales (100–110 € cada uno en el centro de Italia, marzo 2026)',100,110,'fuente'],
+ ['Traje, guantes, ahumador y palanca (por apiario)',120,200,'est'],
+ ['Alimento y jarabe del primer año (por colmena)',10,20,'est'],
+ ['Tratamientos varroa al año (por colmena)',10,20,'est'],
+ ['Frascos, etiquetas y filtros (por colmena)',10,25,'est']
+];
+function calcPresu(n){
+  var lo=0,hi=0;
+  PRESUPUESTO.forEach(function(r,i){var unit=i<2||i>=3;var k=unit?n:1;lo+=r[1]*k;hi+=r[2]*k});
+  return[lo,hi];
+}
+function vBiblioteca(){
+  var h='<div class="stack">';
+  h+='<section class="panel"><h2>Biblioteca de autosuficiencia</h2><p class="muted">Guías para producir tu propia comida y generar ingresos con la tierra. Cada guía trae pasos, calendario, costos y fuentes. Los datos de Italia sirven para el terreno en Lazio, Umbria y Abruzzo. Para Colombia habrá una versión propia más adelante.</p>'+
+   '<div class="chips"><button class="chip" aria-pressed="true">Apiario</button>'+['Hidroponía','Piscicultura','Gallinas','Cerdos','Vacas','Comparativa'].map(function(x){return '<button class="chip" disabled style="opacity:.55;cursor:not-allowed">'+x+' · próximamente</button>'}).join('')+'</div></section>';
+  h+='<section class="panel"><h2>Apiario: empezar como apicultor</h2>'+
+   '<dl class="figs"><div><dt>Inversión inicial</dt><dd>2.000–3.000 €</dd><span class="sub">con equipo completo</span></div><div><dt>Colmenas para empezar</dt><dd>2 a 8</dd><span class="sub">mejor 2 para comparar</span></div><div><dt>Miel por colmena</dt><dd>20–30 kg</dd><span class="sub">hasta 40–50 kg un buen año</span></div></dl>'+
+   '<p class="muted">Una hectárea sobra para un apiario. Las abejas necesitan buenas floraciones en un radio de 3 km más que superficie propia, y además polinizan tus cultivos: avellano no (se poliniza con viento), pero frutales, hortalizas y aromáticas sí.</p></section>';
+  // pasos
+  h+='<section class="panel"><h2>Paso a paso</h2><ol class="steps">'+
+   '<li><b>Formación.</b> Haz un curso de iniciación con una asociación de apicultores o acompaña a un apicultor local una temporada. Es opcional, pero ahorra los errores más caros.</li>'+
+   '<li><b>Registro en la ASL.</b> Un apicultor familiar o de autoconsumo se registra en la BDN (base de datos nacional) directamente en la ASL; si es actividad comercial, a través del SUAP del Comune. Hasta 10 colmenas cuenta como autoconsumo, y los enjambres cuentan en ese límite.</li>'+
+   '<li><b>Elige el sitio.</b> Sol de mañana, resguardo del viento, agua cercana, suelo seco y acceso para el coche. La ley nacional (L. 313/2004) pide unos 10 m de caminos públicos y 5 m de los linderos, o una barrera de 2 m. Confírmalo con tu Comune.</li>'+
+   '<li><b>Compra las familias.</b> Mejor enjambres o núcleos de 5 panales a un apicultor local (100–110 € en el centro de Italia en marzo de 2026), comprados en abril o mayo. Evita colmenas viejas sin historia sanitaria.</li>'+
+   '<li><b>Equipo básico.</b> Colmena (Dadant de 10 o 12 cuadros), traje, guantes, ahumador, palanca y cepillo. El extractor y la envasadora se pueden alquilar a cooperativas o asociaciones.</li>'+
+   '<li><b>Primer año.</b> Revisa cada 7–10 días en primavera, da espacio en tiempo, no tomes miel el primer año si la familia está débil y deja reservas para el invierno.</li>'+
+   '<li><b>Varroa.</b> Es el mayor riesgo. Mide la caída de ácaros, trata según el calendario de abajo y anota todo en el registro de tratamientos dentro de las 48 horas.</li>'+
+   '<li><b>Cosecha y venta.</b> Extrae solo miel operculada. Para vender necesitas registrar el laboratorio y el punto de venta ante la ASL y un plan HACCP; la venta directa de pequeñas cantidades tiene reglas propias de cada región.</li></ol></section>';
+  // calendario
+  h+='<section class="panel"><h2>Calendario del año</h2><p class="muted">Orientativo para el centro de Italia (Viterbo, Orte). Ajusta las fechas a tus floraciones.</p><div class="calwrap"><table class="cal"><thead><tr><th></th>'+MESES.map(function(m){return '<th>'+m+'</th>'}).join('')+'</tr></thead><tbody>'+
+   CAL_API.map(function(r){return '<tr><td title="'+esc(r[2])+'">'+esc(r[0])+'</td>'+r[1].map(function(v){return '<td><i class="c'+v+'"></i></td>'}).join('')+'</tr>'}).join('')+'</tbody></table></div>'+
+   '<ul class="legend"><li><i class="c1"></i> poco</li><li><i class="c2"></i> normal</li><li><i class="c3"></i> pico</li></ul>'+
+   '<p class="hint">'+CAL_API.map(function(r){return '<b>'+esc(r[0])+':</b> '+esc(r[2])}).join(' · ')+'</p></section>';
+  // varroa
+  h+='<section class="panel"><h2>Control de varroa</h2><p class="muted">Según las líneas guía italianas de 2024. Los productos tienen condiciones de temperatura y de uso: lee la etiqueta y habla con el veterinario de la ASL.</p><div class="tablewrap"><table><thead><tr><th>Momento</th><th>Intervención</th><th>Condición</th></tr></thead><tbody>'+
+   VARROA_TAB.map(function(r){return '<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td></tr>'}).join('')+'</tbody></table></div>'+
+   '<p class="hint">Umbral de otoño: tratar enseguida si caen más de 4 ácaros al día. Conserva 5 años los registros, recibos de compra y recetas. Con más de 10 colmenas el registro lo sella la ASL.</p></section>';
+  // presupuesto y calculadora
+  h+='<section class="panel"><h2>Presupuesto y retorno</h2><div class="calc"><label class="fld"><span>Colmenas</span><input type="text" inputmode="numeric" id="cal_n" value="4"></label><label class="fld"><span>Miel por colmena (kg)</span><input type="text" inputmode="numeric" id="cal_kg" value="20"></label><label class="fld"><span>Precio de venta (€ por kg)</span><input type="text" inputmode="decimal" id="cal_p" value="10"></label></div><div id="cal_out">'+calcHtml(4,20,10)+'</div>'+
+   '<p class="hint">El precio de 10 €/kg es un supuesto que debes ajustar: el mercado mayorista de marzo de 2026 no registró precios de miel, y la venta directa depende de tu zona y del tipo de miel. Las filas marcadas como estimación son mías y no vienen de una fuente.</p></section>';
+  // legal
+  h+='<section class="panel"><h2>Qué dice la ley</h2><ul class="rules"><li><b>Registro:</b> la BDN identifica al apicultor y su apiario. Pregunta en la ASL de tu zona (Viterbo o Roma 4 si vives en Orte o Bassano).</li><li><b>Autoconsumo:</b> hasta 10 colmenas, sin actividad comercial.</li><li><b>Registro de tratamientos:</b> obligatorio; sellado por la ASL si tienes más de 10 colmenas.</li><li><b>Vender miel:</b> laboratorio y punto de venta registrados en la ASL (SCIA vía SUAP) y plan HACCP.</li></ul><p class="hint">Resumen basado en la FAQ de apicultura de la Regione Umbria y en la normativa nacional. Las reglas exactas de Lazio pueden variar: confirma con la ASL y el SUAP de tu Comune. No es asesoría legal.</p></section>';
+  h+='<section class="panel"><h2>Fuentes</h2><ul class="rules"><li><a href="https://izsvenezie.it/documenti/temi/api/normativa/ministero-salute/2024-04-02-nota-11687-linee-guida-varroatosi.pdf" target="_blank" rel="noopener">Líneas guía varroatosis 2024 (Ministero della Salute, IZSVe)</a></li><li><a href="https://regione.umbria.it/documents/18/1248136/FAQ+APICOLTURA/7567445d-de84-4d14-b8a6-430a431a0436" target="_blank" rel="noopener">FAQ apicultura, Regione Umbria</a></li><li><a href="https://www.apicoltoremoderno.it/wp-content/uploads/2026/04/Rilevazione-marzo-2026.pdf" target="_blank" rel="noopener">Observatorio de precios, marzo de 2026 (enjambres)</a></li><li><a href="https://areasosta.com/faq/quanto-costa-iniziare-a-fare-il-miele" target="_blank" rel="noopener">Cuánto cuesta empezar con la miel (Areasosta)</a></li></ul></section>';
+  return h+'</div>';
+}
+function calcHtml(n,kg,p){
+  n=Math.max(0,Math.round(n||0));kg=Math.max(0,kg||0);p=Math.max(0,p||0);
+  var b=calcPresu(n),ing=n*kg*p;
+  var rows=PRESUPUESTO.map(function(r,i){var unit=i<2||i>=3,k=unit?n:1;return '<tr><td>'+esc(r[0])+(r[3]==='est'?' <span class="tag warn">estimación</span>':' <span class="tag good">con fuente</span>')+'</td><td class="mono">'+fmt(r[1]*k)+' – '+fmt(r[2]*k)+' €</td></tr>'}).join('');
+  return '<div class="tablewrap"><table class="cost">'+rows+'<tr class="tot"><td>Inversión del primer año ('+n+' colmenas)</td><td>'+fmt(b[0])+' – '+fmt(b[1])+' €</td></tr></table></div>'+
+   '<p class="live-top"><span><b>Ingreso bruto por cosecha:</b> '+fmt(ing)+' € ('+fmt(n*kg)+' kg × '+String(p).replace('.',',')+' €/kg). El primer año suele dar poca o nada de miel, así que recuperar la inversión puede tardar varios años.</span></p>';
+}
 /* ---------- Vistas ---------- */
 function visibles(){
   var q=S.f.q.trim().toLowerCase();
@@ -442,6 +550,7 @@ function visibles(){
     if(S.f.estado&&(t.estado||'por_revisar')!==S.f.estado)return false;
     if(S.f.zona&&t.zona!==S.f.zona)return false;
     if(S.f.edif&&(t.edif||'desconocido')!==S.f.edif)return false;
+    if(S.f.pais&&(t.pais||'Italia')!==S.f.pais)return false;
     if(S.f.alt){var bb=altBanda(t.altitud);if((bb?bb.k:'sin')!==S.f.alt)return false}
     if(q&&[t.nombre,t.comune,t.provincia,t.cultivo,t.notas].join(' ').toLowerCase().indexOf(q)<0)return false;
     return true;
@@ -466,8 +575,9 @@ function vTerrenos(){
   var zopts='<option value="">Todas las zonas</option>'+S.zonas.map(function(z){return '<option value="'+esc(z.id)+'"'+(S.f.zona===z.id?' selected':'')+'>'+esc(z.nombre)+'</option>'}).join('');
   var eopts=[['','Toda edificabilidad'],['no_edificable','No edificable'],['edificable','Edificable'],['desconocido','Sin dato']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.edif===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('');
   var aopts=[['','Toda altitud'],['bajo','Menos de 200 m'],['colina','200–500 m'],['alta','500–800 m'],['monte','Más de 800 m'],['sin','Sin dato']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.alt===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('');
+  var popts=[['','Todos los países'],['Italia','Italia'],['Colombia','Colombia']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.pais===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('');
   var oopts=[['score','Mejor puntuación'],['pha','Menor €/ha'],['precio','Menor precio'],['m2','Mayor superficie'],['nombre','Nombre']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.orden===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('');
-  var h='<div class="bar"><input class="grow" type="text" id="q" placeholder="Buscar por nombre, comune o cultivo" value="'+esc(S.f.q)+'" aria-label="Buscar"><select id="fz" aria-label="Zona">'+zopts+'</select><select id="fe" aria-label="Edificabilidad">'+eopts+'</select><select id="fa" aria-label="Altitud">'+aopts+'</select><select id="fo" aria-label="Ordenar">'+oopts+'</select></div>';
+  var h='<div class="bar"><input class="grow" type="text" id="q" placeholder="Buscar por nombre, comune o cultivo" value="'+esc(S.f.q)+'" aria-label="Buscar"><select id="fz" aria-label="Zona">'+zopts+'</select><select id="fe" aria-label="Edificabilidad">'+eopts+'</select><select id="fa" aria-label="Altitud">'+aopts+'</select><select id="fpa" aria-label="País">'+popts+'</select><select id="fo" aria-label="Ordenar">'+oopts+'</select></div>';
   h+='<div class="bar"><button class="btn pri" data-act="nuevo">Nuevo terreno</button><button class="btn" data-act="importar">Pegar anuncio</button>'+(S.downloads?'<button class="btn" data-act="csv">Exportar CSV</button>':'')+'</div>';
   h+='<div class="chips">'+chips+'</div>';
   if(!S.terrenos.length)return h+'<div class="empty"><h2>Aún no hay terrenos</h2><p>Pega el texto de un anuncio de Immobiliare, Idealista o Subito, o crea la primera ficha a mano.</p></div>';
@@ -478,7 +588,7 @@ function vTerrenos(){
     return '<article class="card'+(est==='descartado'?' dim':'')+'" data-act="abrir" data-id="'+esc(t.id)+'">'+
       '<div class="card-top">'+ring(r.s.pct,48)+'<div class="ct"><h3>'+esc(t.nombre||'Sin nombre')+'</h3><p>'+esc([t.comune,t.provincia].filter(Boolean).join(' · '))+(z?' · '+esc(z.nombre):'')+'</p></div>'+
       '<label class="cmp" data-stop="1"><input type="checkbox" data-act="cmp" data-id="'+esc(t.id)+'"'+(cmpOn?' checked':'')+'> Comparar</label></div>'+
-      '<dl class="figs"><div><dt>Precio</dt><dd>'+eur(t.precio)+(t.precio_nota?'<span class="sub">precio por confirmar</span>':'')+'</dd></div>'+
+      '<dl class="figs"><div><dt>Precio</dt><dd>'+money(t,t.precio)+(t.precio_nota?'<span class="sub">precio por confirmar</span>':'')+'</dd></div>'+
       '<div><dt>Superficie</dt><dd>'+(t.m2>0?fmt(t.m2)+' m²':'—')+'<span class="sub">'+ha(t.m2)+'</span></dd></div>'+
       '<div><dt>€ por ha</dt><dd>'+(p!=null?fmt(p):'—')+'</dd></div></dl>'+
       '<div class="tags">'+tagsFor(t)+'</div>'+
@@ -499,9 +609,10 @@ function vComparar(){
   var h='<div class="tablewrap"><table><thead><tr><th></th>'+rows.map(function(r){return '<th>'+esc(r.t.nombre)+'<br><button class="btn" data-act="abrir" data-id="'+esc(r.t.id)+'" style="margin-top:6px;font-size:12px;padding:3px 8px">Abrir ficha</button></th>'}).join('')+'</tr></thead><tbody>';
   h+=row('Puntuación',rows.map(function(r){return r.s.pct}),function(v,i){return v==null?'—':'<span class="mono">'+v+'/100</span> <span class="muted">confianza '+Math.round(rows[i].s.conf*100)+'%</span>'},'max');
   h+=row('Estado',rows.map(function(r){return r.t.estado||'por_revisar'}),function(v){return ESTADOS[v]});
-  h+=row('Precio',rows.map(function(r){return r.t.precio>0?r.t.precio:null}),function(v,i){return '<span class="mono">'+eur(v)+'</span>'+(rows[i].t.precio_nota?'<br><span class="muted">'+esc(rows[i].t.precio_nota)+'</span>':'')},'min');
+  h+=row('Precio',rows.map(function(r){return r.t.precio>0?r.t.precio:null}),function(v,i){return '<span class="mono">'+money(rows[i].t,v)+'</span>'+(rows[i].t.precio_nota?'<br><span class="muted">'+esc(rows[i].t.precio_nota)+'</span>':'')},'min');
   h+=row('Superficie',rows.map(function(r){return r.t.m2>0?r.t.m2:null}),function(v){return v==null?'—':'<span class="mono">'+fmt(v)+' m²</span> <span class="muted">'+ha(v)+'</span>'},'max');
   h+=row('€ por ha',rows.map(function(r){return r.p}),function(v){return v==null?'—':'<span class="mono">'+fmt(v)+'</span>'},'min');
+  h+=row('País',rows.map(function(r){return r.t.pais||'Italia'}),function(v){return esc(OPT.pais[v]||v)});
   h+=row('Zona',rows.map(function(r){return r.t.zona}),function(v){var z=zona(v);return z?esc(z.nombre):'—'});
   [['relieve','Relieve'],['acceso','Acceso'],['agua','Agua'],['luz','Electricidad'],['parque','Parque'],['edif','Edificabilidad']].forEach(function(p){
     h+=row(p[1],rows.map(function(r){return r.t[p[0]]||'desconocido'}),function(v){return esc(OPT[p[0]][v]||v)});
@@ -559,7 +670,7 @@ function render(){
   statusHtml();
   document.querySelectorAll('[data-tab]').forEach(function(b){b.setAttribute('aria-current',b.dataset.tab===S.view?'page':'false')});
   var n=S.compare.length,nc=$('ncmp');nc.hidden=!n;nc.textContent=n;
-  var fn={terrenos:vTerrenos,comparar:vComparar,zonas:vZonas,criterios:vCriterios}[S.view];
+  var fn={terrenos:vTerrenos,comparar:vComparar,zonas:vZonas,biblioteca:vBiblioteca,criterios:vCriterios}[S.view];
   $('view').innerHTML=fn();
 }
 /* ---------- Cajón ---------- */
@@ -607,8 +718,8 @@ function drawDrawer(){
     var t=d.id?(S.terrenos.filter(function(x){return x.id===d.id})[0]||{}):(d.prefill||{});
     var body='<section class="panel" id="live">'+liveHtml(t)+'</section>'+
       '<section class="panel" id="altp">'+altHtml(t.altitud)+(altAviso(t)?'<p class="warnline">'+esc(altAviso(t))+'</p>':'')+'</section>'+formHtml(TFIELDS,t)+
-      '<section class="panel"><h2>Coste de compra como particular</h2><div id="cost">'+costHtml(t.precio)+'</div><label class="chk" style="margin-top:8px"><span style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="agencia" checked> Incluir comisión de agencia</span></label><p class="hint">Estimación. El notaio confirma las cifras finales.</p></section>';
-    if(d.id){var ck=t.checks||{};body+='<section class="panel"><h2>Checklist legal</h2><div class="chk">'+CHECK.map(function(c){return '<label><input type="checkbox" data-act="chk" data-k="'+c[0]+'"'+(ck[c[0]]?' checked':'')+'> <span>'+esc(c[1])+'</span></label>'}).join('')+'</div></section>'}
+      '<section class="panel"'+(t.pais==='Colombia'?' hidden':'')+' id="costp"><h2>Coste de compra como particular</h2><div id="cost">'+costHtml(t.precio)+'</div><label class="chk" style="margin-top:8px"><span style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="agencia" checked> Incluir comisión de agencia</span></label><p class="hint">Estimación. El notaio confirma las cifras finales.</p></section>';
+    if(d.id){var ck=t.checks||{},LIST=t.pais==='Colombia'?CHECK_CO:CHECK;body+='<section class="panel"><h2>Checklist legal'+(t.pais==='Colombia'?' (Colombia)':'')+'</h2><div class="chk">'+LIST.map(function(c){return '<label><input type="checkbox" data-act="chk" data-k="'+c[0]+'"'+(ck[c[0]]?' checked':'')+'> <span>'+esc(c[1])+'</span></label>'}).join('')+'</div></section>'}
     var sub=t.url?'<a href="'+esc(t.url)+'" target="_blank" rel="noopener" style="color:var(--accent)">Abrir anuncio ↗</a>':'';
     shell(d.id?(t.nombre||'Terreno'):'Nuevo terreno',sub,body,'<button class="btn pri" data-act="guardar">Guardar</button>'+(d.id?'<button class="btn danger" data-act="borrar">Eliminar</button>':'<span></span>'));
   }else if(d.type==='zona'){
@@ -626,6 +737,7 @@ function drawDrawer(){
 function liveUpdate(){
   var d=S.drawer;if(!d||d.type!=='terreno'||!$('live'))return;
   var t=collect(TFIELDS);$('live').innerHTML=liveHtml(t);$('cost').innerHTML=costHtml(t.precio);
+  if($('costp'))$('costp').hidden=(t.pais==='Colombia');
   if($('altp'))$('altp').innerHTML=altHtml(t.altitud)+(altAviso(t)?'<p class="warnline">'+esc(altAviso(t))+'</p>':'');
 }
 async function guardarTerreno(){
@@ -674,7 +786,7 @@ async function extraer(){
   }
 }
 function csv(){
-  var cols=['nombre','comune','provincia','zona','estado','precio','m2','eur_ha','puntuacion','relieve','acceso','agua','luz','parque','edif','altitud','cultivo','mercado','fuente','url','fecha_anuncio','notas'];
+  var cols=['nombre','pais','comune','provincia','zona','estado','precio','m2','eur_ha','puntuacion','relieve','acceso','agua','luz','parque','edif','altitud','cultivo','mercado','fuente','url','fecha_anuncio','notas'];
   function q(v){v=v==null?'':String(v);return /[",\n;]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
   var lines=[cols.join(',')];
   S.terrenos.forEach(function(t){var s=score(t),p=ppha(t);
@@ -731,11 +843,13 @@ document.addEventListener('change',function(e){
   if(el.id==='fz'){S.f.zona=el.value;render();return}
   if(el.id==='fe'){S.f.edif=el.value;render();return}
   if(el.id==='fa'){S.f.alt=el.value;render();return}
+  if(el.id==='fpa'){S.f.pais=el.value;render();return}
   if(el.id==='fo'){S.f.orden=el.value;render();return}
   if(el.id==='agencia'){liveUpdate()}
 });
 document.addEventListener('input',function(e){
   var el=e.target;
+  if(el.id==='cal_n'||el.id==='cal_kg'||el.id==='cal_p'){var o=$('cal_out');if(o)o.innerHTML=calcHtml(parseNum($('cal_n').value),parseNum($('cal_kg').value),parseNum($('cal_p').value));return}
   if(el.id==='q'){S.f.q=el.value;var pos=el.selectionStart;render();var q=$('q');if(q){q.focus();try{q.setSelectionRange(pos,pos)}catch(x){}}return}
   if(el.dataset&&el.dataset.act==='peso'){var o=$('o_'+el.dataset.k);if(o)o.textContent=el.value;return}
   if(S.drawer&&S.drawer.type==='terreno'&&el.id&&el.id.indexOf('f_')===0)liveUpdate();
