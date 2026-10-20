@@ -208,6 +208,7 @@ var OPT={
   agua:{desconocido:'Sin dato',riego:'Riego',pozo:'Pozo',red:'Red de agua',fosso:'Arroyo (fosso)',ninguna:'Sin agua'},
   luz:{desconocido:'Sin dato',si:'Con electricidad',no:'Sin electricidad'},
   parque:{desconocido:'Sin dato',si:'Dentro de parque',no:'Fuera de parque'},
+  edif:{desconocido:'Sin dato',no_edificable:'No edificable (agrícola)',edificable:'Edificable'},
   fuente:{Immobiliare:'Immobiliare.it',Idealista:'Idealista',Subito:'Subito',Otro:'Otro'}
 };
 var SC={
@@ -255,7 +256,8 @@ var TFIELDS=[
   {k:'zona',l:'Zona de referencia',t:'zona',full:1},
   {k:'precio',l:'Precio (€)',t:'num'},
   {k:'m2',l:'Superficie (m²)',t:'num'},
-  {k:'precio_nota',l:'Nota sobre el precio',t:'text',full:1}]},
+  {k:'precio_nota',l:'Nota sobre el precio',t:'text',full:1},
+  {k:'edif',l:'Edificabilidad',t:'sel',o:OPT.edif,def:'desconocido',full:1}]},
  {g:'Terreno',f:[
   {k:'relieve',l:'Relieve',t:'sel',o:OPT.relieve,def:'desconocido'},
   {k:'acceso',l:'Acceso',t:'sel',o:OPT.acceso,def:'desconocido'},
@@ -281,7 +283,7 @@ var ZFIELDS=[
    {k:'normativa',l:'Normativa a tener en cuenta',t:'area',full:1}]}
 ];
 var S={view:'terrenos',terrenos:[],zonas:[],pesos:null,db:null,sample:null,downloads:null,ready:false,dbOff:false,err:null,
-  f:{q:'',estado:'',zona:'',orden:'score'},compare:[],drawer:null};
+  f:{q:'',estado:'',zona:'',edif:'',orden:'score'},compare:[],drawer:null};
 try{var cs=JSON.parse(localStorage.getItem('ct_compare')||'[]');if(Array.isArray(cs))S.compare=cs.slice(0,4)}catch(e){}
 var Q={};
 function enqueue(key,fn){var p=(Q[key]||Promise.resolve()).then(fn);Q[key]=p.catch(function(){});return p}
@@ -336,6 +338,7 @@ function tagsFor(t){
   if(t.luz==='si')a.push(['Electricidad','good']);else if(t.luz==='no')a.push(['Sin electricidad','bad']);
   if(t.acceso==='asfalto')a.push(['Asfalto','good']);else if(t.acceso==='sterrato')a.push(['Camino de tierra','']);else if(t.acceso==='sentiero')a.push(['Solo sendero','bad']);
   if(t.parque==='si')a.push(['Parque nacional','warn']);
+  if(t.edif==='no_edificable')a.push(['No edificable','']);else if(t.edif==='edificable')a.push(['Edificable','warn']);else a.push(['Edificabilidad sin dato','']);
   return a.map(function(x){return '<span class="tag '+x[1]+'">'+esc(x[0])+'</span>'}).join('');
 }
 function statusHtml(){
@@ -351,6 +354,7 @@ function visibles(){
   var a=S.terrenos.filter(function(t){
     if(S.f.estado&&(t.estado||'por_revisar')!==S.f.estado)return false;
     if(S.f.zona&&t.zona!==S.f.zona)return false;
+    if(S.f.edif&&(t.edif||'desconocido')!==S.f.edif)return false;
     if(q&&[t.nombre,t.comune,t.provincia,t.cultivo,t.notas].join(' ').toLowerCase().indexOf(q)<0)return false;
     return true;
   }).map(function(t){return{t:t,s:score(t),p:ppha(t)}});
@@ -372,8 +376,9 @@ function vTerrenos(){
   var chips='<button class="chip" data-act="fest" data-v="" aria-pressed="'+(!S.f.estado)+'">Todos<span class="mono">'+S.terrenos.length+'</span></button>';
   Object.keys(ESTADOS).forEach(function(k){chips+='<button class="chip" data-act="fest" data-v="'+k+'" aria-pressed="'+(S.f.estado===k)+'">'+ESTADOS[k]+'<span class="mono">'+(counts[k]||0)+'</span></button>'});
   var zopts='<option value="">Todas las zonas</option>'+S.zonas.map(function(z){return '<option value="'+esc(z.id)+'"'+(S.f.zona===z.id?' selected':'')+'>'+esc(z.nombre)+'</option>'}).join('');
+  var eopts=[['','Toda edificabilidad'],['no_edificable','No edificable'],['edificable','Edificable'],['desconocido','Sin dato']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.edif===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('');
   var oopts=[['score','Mejor puntuación'],['pha','Menor €/ha'],['precio','Menor precio'],['m2','Mayor superficie'],['nombre','Nombre']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.orden===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('');
-  var h='<div class="bar"><input class="grow" type="text" id="q" placeholder="Buscar por nombre, comune o cultivo" value="'+esc(S.f.q)+'" aria-label="Buscar"><select id="fz" aria-label="Zona">'+zopts+'</select><select id="fo" aria-label="Ordenar">'+oopts+'</select></div>';
+  var h='<div class="bar"><input class="grow" type="text" id="q" placeholder="Buscar por nombre, comune o cultivo" value="'+esc(S.f.q)+'" aria-label="Buscar"><select id="fz" aria-label="Zona">'+zopts+'</select><select id="fe" aria-label="Edificabilidad">'+eopts+'</select><select id="fo" aria-label="Ordenar">'+oopts+'</select></div>';
   h+='<div class="bar"><button class="btn pri" data-act="nuevo">Nuevo terreno</button><button class="btn" data-act="importar">Pegar anuncio</button>'+(S.downloads?'<button class="btn" data-act="csv">Exportar CSV</button>':'')+'</div>';
   h+='<div class="chips">'+chips+'</div>';
   if(!S.terrenos.length)return h+'<div class="empty"><h2>Aún no hay terrenos</h2><p>Pega el texto de un anuncio de Immobiliare, Idealista o Subito, o crea la primera ficha a mano.</p></div>';
@@ -408,7 +413,7 @@ function vComparar(){
   h+=row('Superficie',rows.map(function(r){return r.t.m2>0?r.t.m2:null}),function(v){return v==null?'—':'<span class="mono">'+fmt(v)+' m²</span> <span class="muted">'+ha(v)+'</span>'},'max');
   h+=row('€ por ha',rows.map(function(r){return r.p}),function(v){return v==null?'—':'<span class="mono">'+fmt(v)+'</span>'},'min');
   h+=row('Zona',rows.map(function(r){return r.t.zona}),function(v){var z=zona(v);return z?esc(z.nombre):'—'});
-  [['relieve','Relieve'],['acceso','Acceso'],['agua','Agua'],['luz','Electricidad'],['parque','Parque']].forEach(function(p){
+  [['relieve','Relieve'],['acceso','Acceso'],['agua','Agua'],['luz','Electricidad'],['parque','Parque'],['edif','Edificabilidad']].forEach(function(p){
     h+=row(p[1],rows.map(function(r){return r.t[p[0]]||'desconocido'}),function(v){return esc(OPT[p[0]][v]||v)});
   });
   h+=row('Qué hay plantado',rows.map(function(r){return r.t.cultivo}),function(v){return esc(v||'—')});
@@ -572,7 +577,7 @@ async function extraer(){
   }
 }
 function csv(){
-  var cols=['nombre','comune','provincia','zona','estado','precio','m2','eur_ha','puntuacion','relieve','acceso','agua','luz','parque','cultivo','mercado','fuente','url','fecha_anuncio','notas'];
+  var cols=['nombre','comune','provincia','zona','estado','precio','m2','eur_ha','puntuacion','relieve','acceso','agua','luz','parque','edif','cultivo','mercado','fuente','url','fecha_anuncio','notas'];
   function q(v){v=v==null?'':String(v);return /[",\n;]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
   var lines=[cols.join(',')];
   S.terrenos.forEach(function(t){var s=score(t),p=ppha(t);
@@ -627,6 +632,7 @@ document.addEventListener('change',function(e){
     enqueue('pesos',function(){return S.db.doc('config/pesos').set(w)}).catch(function(){toast('No se pudo guardar')});return;
   }
   if(el.id==='fz'){S.f.zona=el.value;render();return}
+  if(el.id==='fe'){S.f.edif=el.value;render();return}
   if(el.id==='fo'){S.f.orden=el.value;render();return}
   if(el.id==='agencia'){liveUpdate()}
 });
