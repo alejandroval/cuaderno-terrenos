@@ -187,6 +187,7 @@ body{margin:0}
 .atrack .pos{background:var(--accent-soft);border:1px solid var(--accent)}
 .atrack .opt{background:var(--accent)}
 @media(max-width:560px){.crops li{grid-template-columns:1fr}.arow{grid-template-columns:1fr 70px}.arow .atrack{grid-column:1/3}}
+.cropline{margin:8px 0 0;font-size:12.5px;color:var(--ink-2)}.cropline b{color:var(--ink);font-weight:500}
 </style>
 </head><body>
 <div id="login" hidden></div>
@@ -481,6 +482,7 @@ function vTerrenos(){
       '<div><dt>Superficie</dt><dd>'+(t.m2>0?fmt(t.m2)+' m²':'—')+'<span class="sub">'+ha(t.m2)+'</span></dd></div>'+
       '<div><dt>€ por ha</dt><dd>'+(p!=null?fmt(p):'—')+'</dd></div></dl>'+
       '<div class="tags">'+tagsFor(t)+'</div>'+
+      (t.altitud!=null&&!isNaN(t.altitud)?'<p class="cropline"><b>Van bien a '+fmt(t.altitud)+' m:</b> '+esc(cropsFor(Number(t.altitud)).opt.slice(0,5).map(function(x){return x.n.split(' (')[0]}).join(', ')||'ninguno de la lista')+'</p>':'')+
       '<div class="card-foot"><span class="pill '+est+'">'+ESTADOS[est]+'</span>'+(t.url?'<a href="'+esc(t.url)+'" target="_blank" rel="noopener" data-stop="1">Ver anuncio ↗</a>':'')+'</div></article>';
   }).join('')+'</div>';
   return h;
@@ -603,8 +605,8 @@ function drawDrawer(){
   var d=S.drawer;if(!d)return;
   if(d.type==='terreno'){
     var t=d.id?(S.terrenos.filter(function(x){return x.id===d.id})[0]||{}):(d.prefill||{});
-    var body='<section class="panel" id="live">'+liveHtml(t)+'</section>'+formHtml(TFIELDS,t)+
-      '<section class="panel" id="altp">'+altHtml(t.altitud)+(altAviso(t)?'<p class="warnline">'+esc(altAviso(t))+'</p>':'')+'</section>'+
+    var body='<section class="panel" id="live">'+liveHtml(t)+'</section>'+
+      '<section class="panel" id="altp">'+altHtml(t.altitud)+(altAviso(t)?'<p class="warnline">'+esc(altAviso(t))+'</p>':'')+'</section>'+formHtml(TFIELDS,t)+
       '<section class="panel"><h2>Coste de compra como particular</h2><div id="cost">'+costHtml(t.precio)+'</div><label class="chk" style="margin-top:8px"><span style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="agencia" checked> Incluir comisión de agencia</span></label><p class="hint">Estimación. El notaio confirma las cifras finales.</p></section>';
     if(d.id){var ck=t.checks||{};body+='<section class="panel"><h2>Checklist legal</h2><div class="chk">'+CHECK.map(function(c){return '<label><input type="checkbox" data-act="chk" data-k="'+c[0]+'"'+(ck[c[0]]?' checked':'')+'> <span>'+esc(c[1])+'</span></label>'}).join('')+'</div></section>'}
     var sub=t.url?'<a href="'+esc(t.url)+'" target="_blank" rel="noopener" style="color:var(--accent)">Abrir anuncio ↗</a>':'';
