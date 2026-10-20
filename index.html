@@ -785,6 +785,31 @@ function vZonas(){
   h+='</div><p class="bar" style="margin-top:12px"><button class="btn" data-act="znueva">Nueva zona</button></p><p class="hint">Los rangos de Sardegna y Basilicata son medias regionales de CREA (2020). Los de Lazio, Umbria y Abruzzo son orientativos: edítalos cuando tengas datos mejores.</p></section></div>';
   return h;
 }
+function hipoCalc(){
+  function g(id,d){var e=$(id);var v=e?parseNum(e.value):NaN;return isNaN(v)?d:v}
+  var precio=g('hp_precio',0),ahorro=g('hp_ahorro',0),tan=g('hp_tan',0),anios=g('hp_anios',1),ing=g('hp_ing',0),otras=g('hp_otras',0),lim=g('hp_lim',30),otros=g('hp_otros',0);
+  var n=Math.max(1,Math.round(anios*12)),r=tan/100/12;
+  function cuotaDe(P){return r>0?P*r/(1-Math.pow(1+r,-n)):P/n}
+  function prestDe(c){return r>0?c*(1-Math.pow(1+r,-n))/r:c*n}
+  var reg=precio>0?Math.max(1000,.15*precio):0,gastos=precio>0?reg+100+otros:0;
+  var prest=Math.max(0,precio+gastos-ahorro),cuota=cuotaDe(prest);
+  var cmax=Math.max(0,ing*lim/100-otras),pmaxPrest=prestDe(cmax),T=pmaxPrest+ahorro-100-otros;
+  var A=T/1.15,pmax=Math.max(0,.15*A>=1000?A:T-1000);
+  var pct=ing>0?cuota/ing*100:null,cls=pct==null?'':pct<=lim?'good':pct<=lim+10?'warn':'bad';
+  var h='<ul class="crops">'+
+   '<li class="'+cls+'"><b>Cuota mensual</b><span>'+(prest>0?eur(cuota)+' al mes':'Sin préstamo')+(pct!=null&&prest>0?'<em>Equivale al '+Math.round(pct)+' % de tus ingresos (tu límite: '+lim+' %)</em>':'')+'</span></li>'+
+   '<li><b>Gastos de compra</b><span>'+eur(gastos)+'<em>Registro 15 % (mínimo 1.000 €) + unos 100 € de ipotecaria y catastale + otros gastos que indiques</em></span></li>'+
+   '<li><b>Préstamo necesario</b><span>'+eur(prest)+'<em>Precio + gastos − ahorro. Intereses totales: '+eur(Math.max(0,cuota*n-prest))+'</em></span></li>'+
+   '<li class="good"><b>Precio máximo con tu límite</b><span>'+eur(pmax)+'<em>Cuota máxima '+eur(cmax)+' al mes, préstamo posible '+eur(pmaxPrest)+', más tu ahorro</em></span></li></ul>';
+  return h;
+}
+function hipoPanel(){
+  function f(id,l,v,m){return '<label class="fld"><span>'+l+'</span><input type="text" inputmode="'+(m||'decimal')+'" id="'+id+'" value="'+v+'"></label>'}
+  return '<section class="panel"><h2>Calculadora de financiación (Italia, en euros)</h2><p class="muted">Calcula la cuota y el precio máximo que podrías pagar. Solo el ingreso viene de tus datos; el resto son valores de ejemplo, cámbialos.</p><div class="calc">'+
+   f('hp_precio','Precio del terreno (€)',40000)+f('hp_ahorro','Ahorro que pondrías (€)',10000)+f('hp_tan','Interés anual (%)',5)+f('hp_anios','Plazo (años)',10,'numeric')+
+   f('hp_ing','Ingreso mensual (€)',1748)+f('hp_otras','Otras cuotas al mes (€)',0)+f('hp_lim','Cuota máxima sobre ingresos (%)',30)+f('hp_otros','Otros gastos: notaio, etc. (€)',1500)+
+   '</div><div id="hp_out">'+hipoCalc()+'</div><p class="hint">Estimación sin garantía. Un banco puede financiar un terreno agrícola con condiciones distintas a las de una vivienda y puede no contar todos tus ingresos. Pídele una simulación real. Si tu cualificación (IAP o CD) cambia los impuestos, los gastos bajan.</p></section>';
+}
 function vCriterios(){
   var w=S.pesos||PESOS0;
   var h='<section class="panel"><h2>Cómo se calcula la puntuación</h2><p class="muted">Cada terreno recibe de 0 a 100. Se promedian los criterios que tienen dato, con el peso que fijes aquí. Si faltan datos, la puntuación se calcula con lo que hay y baja la confianza que se muestra junto a ella. Peso 0 anula un criterio.</p>';
@@ -794,7 +819,7 @@ function vCriterios(){
   });
   h+='<p class="bar" style="margin-top:12px"><button class="btn" data-act="reset">Volver a los pesos iniciales</button></p>'+
    '<p class="hint">Las valoraciones de mercado y de aptitud de zona que vienen cargadas son estimaciones iniciales. Cámbialas en cada ficha o zona cuando tengas mejor información.</p></section>';
-  return h;
+  return h+hipoPanel();
 }
 function render(){
   statusHtml();
@@ -987,6 +1012,7 @@ document.addEventListener('change',function(e){
 });
 document.addEventListener('input',function(e){
   var el=e.target;
+  if(el.id&&el.id.indexOf('hp_')===0){var ho=$('hp_out');if(ho)ho.innerHTML=hipoCalc();return}
   if(el.id==='cal_n'||el.id==='cal_kg'||el.id==='cal_p'){var o=$('cal_out');if(o)o.innerHTML=calcHtml(parseNum($('cal_n').value),parseNum($('cal_kg').value),parseNum($('cal_p').value));return}
   if(el.id==='q'){S.f.q=el.value;var pos=el.selectionStart;render();var q=$('q');if(q){q.focus();try{q.setSelectionRange(pos,pos)}catch(x){}}return}
   if(el.dataset&&el.dataset.act==='peso'){var o=$('o_'+el.dataset.k);if(o)o.textContent=el.value;return}
