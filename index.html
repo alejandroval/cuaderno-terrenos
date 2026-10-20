@@ -172,6 +172,21 @@ body{margin:0}
 #login p{color:var(--ink-2)}
 #login .fld{margin:14px 0}
 #login .row{display:flex;gap:8px;flex-wrap:wrap}
+
+.crops{list-style:none;margin:6px 0 10px;padding:0;display:flex;flex-direction:column;gap:6px}
+.crops li{display:grid;grid-template-columns:minmax(0,150px) 1fr;gap:10px;font-size:13px;padding:6px 8px;border-radius:6px;border-left:3px solid var(--line);background:var(--surface-2)}
+.crops li.good{border-left-color:var(--good)}.crops li.warn{border-left-color:var(--warn)}.crops li.bad{border-left-color:var(--bad)}
+.crops li span{min-width:0;color:var(--ink-2)}.crops li em{display:block;font:400 11px var(--mono);color:var(--ink-3);font-style:normal;margin-top:2px}
+.sh{font-size:14px;margin:12px 0 2px}.sh.good{color:var(--good)}.sh.warn{color:var(--warn)}.sh.bad{color:var(--bad)}
+.warnline{margin:10px 0 0;padding:8px 10px;border-radius:6px;background:var(--bad-soft);color:var(--bad);font-size:13px}
+.axis.alt{grid-template-columns:repeat(4,1fr)}
+.arow{display:grid;grid-template-columns:minmax(0,170px) 1fr 84px;gap:8px;align-items:center;font-size:13px;padding:4px 0}
+.arow b{font-weight:500}.arow .mono{font-size:11px;color:var(--ink-3);text-align:right}
+.atrack{position:relative;height:12px;background:var(--surface-2);border-radius:4px}
+.atrack i{position:absolute;top:0;bottom:0;border-radius:4px}
+.atrack .pos{background:var(--accent-soft);border:1px solid var(--accent)}
+.atrack .opt{background:var(--accent)}
+@media(max-width:560px){.crops li{grid-template-columns:1fr}.arow{grid-template-columns:1fr 70px}.arow .atrack{grid-column:1/3}}
 </style>
 </head><body>
 <div id="login" hidden></div>
@@ -257,6 +272,8 @@ var TFIELDS=[
   {k:'precio',l:'Precio (€)',t:'num'},
   {k:'m2',l:'Superficie (m²)',t:'num'},
   {k:'precio_nota',l:'Nota sobre el precio',t:'text',full:1},
+  {k:'altitud',l:'Altitud (m s. n. m.)',t:'num'},
+  {k:'altitud_nota',l:'Origen de la altitud',t:'text'},
   {k:'edif',l:'Edificabilidad',t:'sel',o:OPT.edif,def:'desconocido',full:1}]},
  {g:'Terreno',f:[
   {k:'relieve',l:'Relieve',t:'sel',o:OPT.relieve,def:'desconocido'},
@@ -282,8 +299,75 @@ var ZFIELDS=[
    {k:'cultivos',l:'Cultivos con mercado',t:'area',full:1},
    {k:'normativa',l:'Normativa a tener en cuenta',t:'area',full:1}]}
 ];
+
+/* Cultivos y altitud: [nombre, mín. posible, mín. óptimo, máx. óptimo, máx. posible, comentario]. Orientativo para el centro de Italia. */
+var CROPS=[
+ ['Olivo',0,50,500,650,'Sufre con heladas fuertes: pasados 500–600 m el riesgo de daño por frío sube mucho.'],
+ ['Vid',0,50,500,750,'En altura madura peor, pero da vinos de calidad en laderas soleadas.'],
+ ['Avellano',100,300,700,900,'Necesita frío invernal y veranos no extremos. La Tonda Gentile Romana rinde mejor en los Cimini, a 300–700 m.'],
+ ['Nogal',0,200,700,900,'Evitar hondonadas con heladas tardías en primavera.'],
+ ['Almendro',0,0,350,500,'Florece muy pronto: las heladas de primavera lo castigan en altura.'],
+ ['Kiwi',0,0,300,450,'Pide inviernos suaves y mucha agua de riego.'],
+ ['Cerezo',100,250,700,900,'Necesita frío invernal; se cultiva bien en colinas medias.'],
+ ['Manzano y peral',200,400,900,1200,'Mejor en zonas frescas; en llano caliente pierde calidad y color.'],
+ ['Castaño',200,400,900,1100,'Prefiere suelos ácidos y volcánicos, comunes en los Cimini.'],
+ ['Trufa (negra y de verano)',200,350,800,1000,'Depende de las micorrizas y del suelo calizo con drenaje. Inversión a largo plazo.'],
+ ['Cereales y forrajes',0,0,800,1500,'Muy flexibles; en altura bajan el rendimiento pero siguen valiendo.'],
+ ['Legumbres (lenteja, garbanzo, cicerchia)',0,100,1100,1500,'Las legumbres de altura tienen buen precio de nicho.'],
+ ['Hortalizas al aire libre',0,0,600,1000,'En altura el ciclo es más corto: ojo con las heladas de mayo y octubre.'],
+ ['Lavanda y aromáticas',100,300,1000,1300,'Les gusta el sol, la altura y el suelo pobre y drenado.'],
+ ['Azafrán',0,500,900,1300,'Se cultiva en la meseta de Navelli (L’Aquila), a unos 700 m.'],
+ ['Patata',300,600,1300,1500,'La patata de altura (Fucino, Sila) sale limpia y se paga mejor.'],
+ ['Apicultura (miel)',0,0,1200,1800,'Funciona en cualquier altura: cambian las floraciones y las mieles.']
+];
+function altBanda(a){
+  if(a==null||isNaN(a))return null;
+  if(a<200)return{k:'bajo',l:'Llano y colina baja',c:'good'};
+  if(a<500)return{k:'colina',l:'Colina',c:''};
+  if(a<800)return{k:'alta',l:'Colina alta',c:'warn'};
+  return{k:'monte',l:'Montaña',c:'bad'};
+}
+function cropsFor(a){
+  var r={opt:[],jus:[],no:[]};
+  CROPS.forEach(function(c){
+    var x={n:c[0],t:c[5],min:c[1],omin:c[2],omax:c[3],max:c[4]};
+    if(a>=c[2]&&a<=c[3])r.opt.push(x);
+    else if(a>=c[1]&&a<=c[4])r.jus.push(x);
+    else r.no.push(x);
+  });
+  return r;
+}
+function cropWhy(x,a){
+  if(a<x.min)return 'Quedaría por debajo de '+x.min+' m: poco frío y exceso de calor';
+  if(a>x.max)return 'Por encima de '+x.max+' m ya no es viable';
+  return '';
+}
+function altHtml(a){
+  if(a==null||isNaN(a))return '<h2>Cultivos según la altitud</h2><p class="muted">Escribe la altitud del terreno (en metros sobre el nivel del mar) para ver qué cultivos encajan.</p>';
+  var b=altBanda(a),r=cropsFor(a);
+  function lst(arr,cls,empty,why){
+    if(!arr.length)return '<p class="muted">'+empty+'</p>';
+    return '<ul class="crops">'+arr.map(function(x){return '<li class="'+cls+'"><b>'+esc(x.n)+'</b><span>'+esc(why?(cropWhy(x,a)||x.t):x.t)+'<em>Óptimo '+x.omin+'–'+x.omax+' m · posible hasta '+x.min+'–'+x.max+' m</em></span></li>'}).join('')+'</ul>';
+  }
+  return '<h2>Cultivos según la altitud</h2><p class="muted"><b>'+fmt(a)+' m</b> · '+b.l+'. Referencia orientativa: el microclima de la parcela (orientación, valle, viento) puede cambiar el resultado.</p>'+
+   '<h3 class="sh good">Van bien ('+r.opt.length+')</h3>'+lst(r.opt,'good','Ninguno de la lista queda en su rango óptimo.')+
+   '<h3 class="sh warn">Posibles, con más riesgo ('+r.jus.length+')</h3>'+lst(r.jus,'warn','Ninguno.')+
+   '<h3 class="sh bad">No recomendados ('+r.no.length+')</h3>'+lst(r.no,'bad','Ninguno.',true);
+}
+function altAviso(t){
+  var a=t.altitud;if(a==null||isNaN(a)||!t.cultivo)return '';
+  var c=String(t.cultivo).toLowerCase(),out=[];
+  var map=[['oliv','Olivo'],['avellan|noccio|hazel','Avellano'],['\\bvid|vigne|\\buva','Vid'],['noce|nogal|nuez','Nogal'],['mandorl|almendr','Almendro'],['kiwi','Kiwi'],['castagn|casta','Castaño']];
+  map.forEach(function(m){
+    if(new RegExp(m[0]).test(c)){
+      var cr=CROPS.filter(function(x){return x[0]===m[1]})[0];
+      if(cr&&(a<cr[1]||a>cr[4]))out.push(m[1]+' a '+fmt(a)+' m queda fuera de su rango');
+    }
+  });
+  return out.join('. ');
+}
 var S={view:'terrenos',terrenos:[],zonas:[],pesos:null,db:null,sample:null,downloads:null,ready:false,dbOff:false,err:null,
-  f:{q:'',estado:'',zona:'',edif:'',orden:'score'},compare:[],drawer:null};
+  f:{q:'',estado:'',zona:'',edif:'',alt:'',orden:'score'},compare:[],drawer:null};
 try{var cs=JSON.parse(localStorage.getItem('ct_compare')||'[]');if(Array.isArray(cs))S.compare=cs.slice(0,4)}catch(e){}
 var Q={};
 function enqueue(key,fn){var p=(Q[key]||Promise.resolve()).then(fn);Q[key]=p.catch(function(){});return p}
@@ -338,6 +422,8 @@ function tagsFor(t){
   if(t.luz==='si')a.push(['Electricidad','good']);else if(t.luz==='no')a.push(['Sin electricidad','bad']);
   if(t.acceso==='asfalto')a.push(['Asfalto','good']);else if(t.acceso==='sterrato')a.push(['Camino de tierra','']);else if(t.acceso==='sentiero')a.push(['Solo sendero','bad']);
   if(t.parque==='si')a.push(['Parque nacional','warn']);
+  var ab=altBanda(t.altitud);if(ab)a.push([fmt(t.altitud)+' m',ab.c]);else a.push(['Altitud sin dato','']);
+  if(altAviso(t))a.push(['Cultivo fuera de rango de altura','bad']);
   if(t.edif==='no_edificable')a.push(['No edificable','']);else if(t.edif==='edificable')a.push(['Edificable','warn']);else a.push(['Edificabilidad sin dato','']);
   return a.map(function(x){return '<span class="tag '+x[1]+'">'+esc(x[0])+'</span>'}).join('');
 }
@@ -355,6 +441,7 @@ function visibles(){
     if(S.f.estado&&(t.estado||'por_revisar')!==S.f.estado)return false;
     if(S.f.zona&&t.zona!==S.f.zona)return false;
     if(S.f.edif&&(t.edif||'desconocido')!==S.f.edif)return false;
+    if(S.f.alt){var bb=altBanda(t.altitud);if((bb?bb.k:'sin')!==S.f.alt)return false}
     if(q&&[t.nombre,t.comune,t.provincia,t.cultivo,t.notas].join(' ').toLowerCase().indexOf(q)<0)return false;
     return true;
   }).map(function(t){return{t:t,s:score(t),p:ppha(t)}});
@@ -377,8 +464,9 @@ function vTerrenos(){
   Object.keys(ESTADOS).forEach(function(k){chips+='<button class="chip" data-act="fest" data-v="'+k+'" aria-pressed="'+(S.f.estado===k)+'">'+ESTADOS[k]+'<span class="mono">'+(counts[k]||0)+'</span></button>'});
   var zopts='<option value="">Todas las zonas</option>'+S.zonas.map(function(z){return '<option value="'+esc(z.id)+'"'+(S.f.zona===z.id?' selected':'')+'>'+esc(z.nombre)+'</option>'}).join('');
   var eopts=[['','Toda edificabilidad'],['no_edificable','No edificable'],['edificable','Edificable'],['desconocido','Sin dato']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.edif===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('');
+  var aopts=[['','Toda altitud'],['bajo','Menos de 200 m'],['colina','200–500 m'],['alta','500–800 m'],['monte','Más de 800 m'],['sin','Sin dato']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.alt===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('');
   var oopts=[['score','Mejor puntuación'],['pha','Menor €/ha'],['precio','Menor precio'],['m2','Mayor superficie'],['nombre','Nombre']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.orden===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('');
-  var h='<div class="bar"><input class="grow" type="text" id="q" placeholder="Buscar por nombre, comune o cultivo" value="'+esc(S.f.q)+'" aria-label="Buscar"><select id="fz" aria-label="Zona">'+zopts+'</select><select id="fe" aria-label="Edificabilidad">'+eopts+'</select><select id="fo" aria-label="Ordenar">'+oopts+'</select></div>';
+  var h='<div class="bar"><input class="grow" type="text" id="q" placeholder="Buscar por nombre, comune o cultivo" value="'+esc(S.f.q)+'" aria-label="Buscar"><select id="fz" aria-label="Zona">'+zopts+'</select><select id="fe" aria-label="Edificabilidad">'+eopts+'</select><select id="fa" aria-label="Altitud">'+aopts+'</select><select id="fo" aria-label="Ordenar">'+oopts+'</select></div>';
   h+='<div class="bar"><button class="btn pri" data-act="nuevo">Nuevo terreno</button><button class="btn" data-act="importar">Pegar anuncio</button>'+(S.downloads?'<button class="btn" data-act="csv">Exportar CSV</button>':'')+'</div>';
   h+='<div class="chips">'+chips+'</div>';
   if(!S.terrenos.length)return h+'<div class="empty"><h2>Aún no hay terrenos</h2><p>Pega el texto de un anuncio de Immobiliare, Idealista o Subito, o crea la primera ficha a mano.</p></div>';
@@ -416,6 +504,8 @@ function vComparar(){
   [['relieve','Relieve'],['acceso','Acceso'],['agua','Agua'],['luz','Electricidad'],['parque','Parque'],['edif','Edificabilidad']].forEach(function(p){
     h+=row(p[1],rows.map(function(r){return r.t[p[0]]||'desconocido'}),function(v){return esc(OPT[p[0]][v]||v)});
   });
+  h+=row('Altitud',rows.map(function(r){return r.t.altitud!=null&&!isNaN(r.t.altitud)?Number(r.t.altitud):null}),function(v){return v==null?'—':'<span class="mono">'+fmt(v)+' m</span> <span class="muted">'+altBanda(v).l+'</span>'});
+  h+=row('Cultivos que van bien',rows.map(function(r){return r.t.altitud!=null&&!isNaN(r.t.altitud)?cropsFor(Number(r.t.altitud)).opt.map(function(x){return x.n}).join(', '):null}),function(v){return v==null?'—':esc(v||'Ninguno')});
   h+=row('Qué hay plantado',rows.map(function(r){return r.t.cultivo}),function(v){return esc(v||'—')});
   h+=row('Mercado del cultivo',rows.map(function(r){return r.t.mercado!=null&&r.t.mercado!==''?Number(r.t.mercado):null}),function(v){return v==null?'—':'<span class="mono">'+v+'/5</span>'},'max');
   h+=row('Ventajas',rows.map(function(r){return r.t.ventajas}),function(v){return esc(v||'—')});
@@ -434,6 +524,9 @@ function vZonas(){
    '<li><b>Serre:</b> las mobili stagionali sin obra de muros son edilizia libera (puede pedirse autorización paesaggistica). Las fijas necesitan permiso de construir.</li>'+
    '<li><b>Parques y vínculos:</b> dentro de un parque nacional cualquier obra necesita nulla osta del Ente Parco.</li></ul>'+
    '<p class="hint">Resumen orientativo. Cada comune tiene la última palabra: confirma con el notaio y el ufficio tecnico.</p></section>';
+  h+='<section class="panel"><h2>Cultivos según la altitud</h2><p class="muted">Rango en metros sobre el nivel del mar. La barra clara es el rango posible y la oscura el rango óptimo. Orientativo para el centro de Italia (Lazio, Umbria, Abruzzo). No incluye cítricos: fuera de la costa el invierno los daña.</p><div class="chart"><div class="axis alt"><span>0</span><span>400</span><span>800</span><span>1.200 · 1.800</span></div>'+
+   CROPS.map(function(c){var M=1800;return '<div class="arow"><b>'+esc(c[0])+'</b><div class="atrack"><i class="pos" style="left:'+c[1]/M*100+'%;width:'+(c[4]-c[1])/M*100+'%"></i><i class="opt" style="left:'+c[2]/M*100+'%;width:'+Math.max(.6,(c[3]-c[2])/M*100)+'%"></i></div><span class="mono">'+c[2]+'–'+c[3]+' m</span></div>'}).join('')+
+   '</div><p class="hint">Son rangos agronómicos generales, no datos oficiales de cada parcela. Confirma con un agrónomo local (y con las estaciones agrometeorológicas de la región) antes de plantar.</p></section>';
   h+='<section class="panel"><h2>Precio de referencia frente a tus terrenos</h2><p class="muted">La banda azul es el rango de referencia de la zona en € por hectárea. Cada punto es un terreno. Un cuadrado pegado al borde derecho supera los 40.000 €/ha (parcelas pequeñas con servicios o edificaciones).</p><div class="chart"><div class="axis"><span>0</span><span>10.000</span><span>20.000</span><span>30.000 · 40.000</span></div>';
   S.zonas.forEach(function(z){
     var pts=S.terrenos.filter(function(t){return t.zona===z.id&&ppha(t)!=null}).map(function(t){return{t:t,p:ppha(t)}}).sort(function(a,b){return a.p-b.p});
@@ -511,6 +604,7 @@ function drawDrawer(){
   if(d.type==='terreno'){
     var t=d.id?(S.terrenos.filter(function(x){return x.id===d.id})[0]||{}):(d.prefill||{});
     var body='<section class="panel" id="live">'+liveHtml(t)+'</section>'+formHtml(TFIELDS,t)+
+      '<section class="panel" id="altp">'+altHtml(t.altitud)+(altAviso(t)?'<p class="warnline">'+esc(altAviso(t))+'</p>':'')+'</section>'+
       '<section class="panel"><h2>Coste de compra como particular</h2><div id="cost">'+costHtml(t.precio)+'</div><label class="chk" style="margin-top:8px"><span style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="agencia" checked> Incluir comisión de agencia</span></label><p class="hint">Estimación. El notaio confirma las cifras finales.</p></section>';
     if(d.id){var ck=t.checks||{};body+='<section class="panel"><h2>Checklist legal</h2><div class="chk">'+CHECK.map(function(c){return '<label><input type="checkbox" data-act="chk" data-k="'+c[0]+'"'+(ck[c[0]]?' checked':'')+'> <span>'+esc(c[1])+'</span></label>'}).join('')+'</div></section>'}
     var sub=t.url?'<a href="'+esc(t.url)+'" target="_blank" rel="noopener" style="color:var(--accent)">Abrir anuncio ↗</a>':'';
@@ -530,6 +624,7 @@ function drawDrawer(){
 function liveUpdate(){
   var d=S.drawer;if(!d||d.type!=='terreno'||!$('live'))return;
   var t=collect(TFIELDS);$('live').innerHTML=liveHtml(t);$('cost').innerHTML=costHtml(t.precio);
+  if($('altp'))$('altp').innerHTML=altHtml(t.altitud)+(altAviso(t)?'<p class="warnline">'+esc(altAviso(t))+'</p>':'');
 }
 async function guardarTerreno(){
   var d=S.drawer,v=collect(TFIELDS);
@@ -577,7 +672,7 @@ async function extraer(){
   }
 }
 function csv(){
-  var cols=['nombre','comune','provincia','zona','estado','precio','m2','eur_ha','puntuacion','relieve','acceso','agua','luz','parque','edif','cultivo','mercado','fuente','url','fecha_anuncio','notas'];
+  var cols=['nombre','comune','provincia','zona','estado','precio','m2','eur_ha','puntuacion','relieve','acceso','agua','luz','parque','edif','altitud','cultivo','mercado','fuente','url','fecha_anuncio','notas'];
   function q(v){v=v==null?'':String(v);return /[",\n;]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
   var lines=[cols.join(',')];
   S.terrenos.forEach(function(t){var s=score(t),p=ppha(t);
@@ -633,6 +728,7 @@ document.addEventListener('change',function(e){
   }
   if(el.id==='fz'){S.f.zona=el.value;render();return}
   if(el.id==='fe'){S.f.edif=el.value;render();return}
+  if(el.id==='fa'){S.f.alt=el.value;render();return}
   if(el.id==='fo'){S.f.orden=el.value;render();return}
   if(el.id==='agencia'){liveUpdate()}
 });
