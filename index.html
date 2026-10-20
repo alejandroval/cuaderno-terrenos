@@ -630,11 +630,93 @@ function calcHtml(n,kg,p){
    '<p class="live-top"><span><b>Ingreso bruto por cosecha:</b> '+m(ing)+' ('+fmt(n*kg)+' kg × '+fmt(p)+' '+D.mon+'/kg). El primer año suele dar poca o nada de miel, así que recuperar la inversión puede tardar varios años.</span></p>'+
    '<h3 class="sh">Tres escalas con los valores de partida</h3><div class="tablewrap"><table><thead><tr><th>Escala</th><th>Inversión inicial</th><th>Ingreso bruto por cosecha</th></tr></thead><tbody>'+esc3+'</tbody></table></div>';
 }
+
+/* ---------- Guía de gallinas ponedoras ---------- */
+var GAL_ES={mon:'€',huevos:250,precio:0.4,pienso:0.45,
+ partidas:[
+  ['Gallinas ovaiole jóvenes, listas para poner (por ave)','ave',1,8,15,'est'],
+  ['Gallinero con refugio, ponederos y posaderos, hecho por ti (para unas 10 gallinas)','fijo',1,150,500,'est'],
+  ['Recinto con valla y protección contra zorros y aves rapaces','fijo',1,100,400,'est'],
+  ['Comederos y bebederos','fijo',1,20,60,'est'],
+  ['Cajas de huevos y etiquetas','fijo',1,10,40,'est']
+ ]};
+var GAL_CO={mon:'COP',huevos:250,precio:600,pienso:3000,
+ partidas:[
+  ['Gallinas ponedoras jóvenes, listas para poner (por ave)','ave',1,25000,40000,'est'],
+  ['Gallinero con refugio, ponederos y posaderos, hecho por ti (para unas 10 gallinas)','fijo',1,400000,1500000,'est'],
+  ['Cerco y protección contra zorros, gavilanes y roedores','fijo',1,300000,1000000,'est'],
+  ['Comederos y bebederos','fijo',1,50000,150000,'est'],
+  ['Cubetas o panales de cartón y etiquetas','fijo',1,30000,100000,'est']
+ ]};
+var GAL_PASOS_ES=[
+ ['Decide el objetivo','Unas 10 a 20 gallinas dan huevos para una familia y algo para vender cerca. Hasta 50 gallinas es la categoría de allevamento familiare. Pensado como complemento del terreno, no como sueldo.'],
+ ['Revisa el terreno','Necesitas sombra, drenaje, agua y un recinto que proteja de zorros y de rapaces. Las gallinas ponen mejor con poco estrés y con luz regular.'],
+ ['Regístrate en la ASL','Para criar hasta 50 aves solo para autoconsumo, el allevamento familiare se registra en la ASL con un formulario: pide el código aziendale, autodeclaras que no hay actividad comercial y adjuntas los datos catastrales del terreno y tu documento. La inscripción en la BDN no equivale a una autorización para tener animales. Si vas a vender huevos, pregunta a la ASL de Viterbo qué registro corresponde, porque el familiare es solo para autoconsumo.'],
+ ['Construye el gallinero antes de comprar','Cubierto, ventilado, con ponederos y posaderos. Compra después gallinas jóvenes de un proveedor registrado que te dé el documento de traslado (Modello 4).'],
+ ['Empieza con pocas aves','Entre 10 y 20 gallinas en el primer año te permiten aprender sobre alimentación, enfermedades y depredadores sin gran inversión.'],
+ ['Lleva los registros','Anota los tratamientos veterinarios: se conservan 5 años desde la última anotación. Anota también la fecha de recogida de los huevos.'],
+ ['Vende cerca','Los huevos de pequeños productores se venden directamente al consumidor hasta 10 km del lugar de producción. Más lejos exigen centro de embalaje reconocido.']
+];
+var GAL_PASOS_CO=[
+ ['Decide el objetivo','Con 10 a 20 gallinas cubres huevos para tu familia y vendes un poco en la vereda. Con 200 aves o más tu granja entra en la categoría de granja avícola biosegura del ICA.'],
+ ['Revisa el terreno','Necesitas agua limpia, sombra, buen drenaje y protección contra zorros, gavilanes y roedores. En clima cálido hay que cuidar mucho el calor; en clima frío, las noches.'],
+ ['Pregunta al ICA y a la alcaldía','Antes de montar, consulta en la oficina local del ICA si necesitas registro para tu número de aves. La regulación ICA de granjas bioseguras (Resolución 3652 de 2014) cubre engorde y fija 200 aves de capacidad como umbral de granja biosegura; la de postura se verifica con el ICA. Para vender huevos pregunta también a la Secretaría de Salud de tu municipio.'],
+ ['Construye antes de comprar','Gallinero cubierto, ventilado, con ponederos y posaderos. Compra aves jóvenes vacunadas de un proveedor autorizado.'],
+ ['Vacunación y sanidad','Pide a tu proveedor el esquema de vacunas de las aves y a un veterinario el plan sanitario para tu zona. Pregunta en el ICA qué vacunas son obligatorias hoy: la norma que lo establecía (Res. 3642 de 2013) fue derogada.'],
+ ['Lleva los registros','Anota la mortalidad, el alimento, la producción diaria y las vacunas. Te sirven para calcular la rentabilidad.'],
+ ['Vende cerca','Empieza en tu vereda, tiendas y mercados campesinos. Compara tu precio con el del mercado antes de fijarlo.']
+];
+var GAL_LEGAL_ES=[
+ ['Registro familiar','Hasta 50 aves solo para autoconsumo: registro en la ASL (código aziendale, formulario de allevamento familiare). Sin actividad comercial.'],
+ ['Huevos','Con 50 gallinas o menos los huevos pueden ir sin el código de la granja. Con más de 50 deben llevarlo.'],
+ ['Venta directa','Hasta 10 km del lugar de producción. Fuera de ese radio, marcado y embalaje en un centro reconocido.'],
+ ['Plazo','Los huevos duran como máximo 28 días desde la puesta; recogida diaria, en seco y en locales limpios.'],
+ ['Control sanitario','En granjas de menos de 250 aves se hace muestreo de Salmonella. Las granjas pequeñas con actividad comercial pueden usar un plan de autocontrol simplificado aprobado por los Servicios Veterinarios.'],
+ ['Registros','Tratamientos terapéuticos: conservarlos 5 años.']
+];
+var GAL_LEGAL_CO=[
+ ['Umbral ICA','Granja avícola biosegura: capacidad de al menos 200 aves de la misma especie y tipo de explotación. Para menos, consulta al ICA.'],
+ ['Resolución 3642 de 2013','Fue derogada por las Resoluciones 3650 y 3652 de 2014. Verifica la norma vigente en el ICA.'],
+ ['Distancias','Para granjas bioseguras nuevas o ampliaciones, la Res. 3652 fija: galpón a cerco 50 m, 500 m a otras granjas de postura, levante o engorde y a porcícolas, 3 km a basureros. Aplica a las que se certifican; para tu caso, consulta al ICA.'],
+ ['Vacunación','Sin verificar: la obligación estaba en la Res. 3642 de 2013, hoy derogada. Confirma con el ICA qué aplica.'],
+ ['Venta de huevos','Sin verificar: consulta en la Secretaría de Salud de tu municipio y en el INVIMA qué requisitos aplican a una finca pequeña.']
+];
+var GAL_FUENTES_ES=[
+ ['Registro de allevamento familiare, ASL Viterbo','https://www.asl.vt.it/storage/uploads/forms/25573a635db3edcdf822092efad52d72.pdf'],
+ ['Manual de huevos (Región Friuli Venezia Giulia, ejemplo regional)','https://ppl.regione.fvg.it/public/Info/MANUALE%20UOVA_FVG.pdf'],
+ ['D.Lgs. 267/2003 (bienestar de gallinas ovaiole)','https://www.tuttosullegalline.it/newsite/wp-content/uploads/2017/01/NORMATTIVA_267_2003.pdf']
+];
+var GAL_FUENTES_CO=[
+ ['Resolución ICA 3652 de 2014 (granjas de engorde bioseguras)','https://normograma.invima.gov.co/normograma/docs/pdf/resolucion_ica_3652_2014.pdf'],
+ ['Resolución ICA 3642 de 2013 (derogada, para contexto)','https://compilacionmsf.ica.gov.co:4443/compilacion/docs/pdf/resolucion_ica_3642_2013.pdf']
+];
+function galD(){return S.lib.pais==='Colombia'?GAL_CO:GAL_ES}
+function galCalc(n,h,p,pi){
+  var D=galD();n=Math.max(0,Math.round(n||0));h=Math.max(0,h||0);p=Math.max(0,p||0);pi=Math.max(0,pi||0);
+  function m(x){return fmt(Math.round(x))+' '+D.mon}
+  var lo=0,hi=0,rows=D.partidas.map(function(r){var k=r[1]==='ave'?n:1;lo+=r[3]*k;hi+=r[4]*k;return '<tr><td>'+esc(r[0])+' '+tagFuente(r[5])+'</td><td class="mono">'+fmt(r[3]*k)+' – '+fmt(r[4]*k)+' '+D.mon+'</td></tr>'}).join('');
+  var ing=n*h*p,feed=n*0.12*365*pi,net=ing-feed;
+  return '<div class="tablewrap"><table class="cost">'+rows+'<tr class="tot"><td>Inversión inicial ('+n+' gallinas)</td><td>'+m(lo)+' – '+m(hi)+'</td></tr></table></div>'+
+   '<p class="live-top"><span><b>Ingreso bruto al año:</b> '+m(ing)+' ('+fmt(n*h)+' huevos × '+fmt(p)+' '+D.mon+'). <b>Pienso al año:</b> '+m(feed)+' (calculado con 120 g por gallina al día, un supuesto mío). <b>Queda:</b> '+m(net)+' antes de otros costos, como sanidad y reposición de aves.</span></p>';
+}
+function vGallinas(){
+  var co=S.lib.pais==='Colombia',D=galD(),PASOS=co?GAL_PASOS_CO:GAL_PASOS_ES,LEG=co?GAL_LEGAL_CO:GAL_LEGAL_ES,FUE=co?GAL_FUENTES_CO:GAL_FUENTES_ES;
+  var h='<section class="panel"><h2>Gallinas ponedoras: de cero a los primeros huevos</h2><div class="chips"><button class="chip" data-act="libpais" data-v="Italia" aria-pressed="'+(!co)+'">Italia</button><button class="chip" data-act="libpais" data-v="Colombia" aria-pressed="'+co+'">Colombia</button></div>'+
+   '<p class="muted">'+(co?'Las gallinas se adaptan a varios pisos térmicos, pero sufren con calor extremo y con noches muy frías. En un terreno de una hectárea caben muchas más aves de las que necesitas para empezar.':'Una hectárea da espacio de sobra para unas pocas gallinas al aire libre, con rotación de parcelas. Tu límite no es el terreno: es el tiempo y el trámite.')+'</p>'+
+   '<p class="hint">Las cifras de costos, producción y precios de esta guía son <b>estimaciones mías</b> sin fuente: ajústalas con precios reales de tu zona. Solo los datos legales vienen de las fuentes citadas abajo.</p></section>';
+  h+='<section class="panel"><h2>Paso a paso</h2><ol class="steps">'+PASOS.map(function(x){return '<li><b>'+esc(x[0])+'.</b> '+esc(x[1])+'</li>'}).join('')+'</ol></section>';
+  h+='<section class="panel"><h2>Presupuesto y retorno ('+(co?'Colombia, en COP':'Italia, en euros')+')</h2><div class="calc"><label class="fld"><span>Gallinas</span><input type="text" inputmode="numeric" id="gl_n" value="15"></label><label class="fld"><span>Huevos por gallina al año</span><input type="text" inputmode="numeric" id="gl_h" value="'+D.huevos+'"></label><label class="fld"><span>Precio por huevo ('+D.mon+')</span><input type="text" inputmode="decimal" id="gl_p" value="'+D.precio+'"></label><label class="fld"><span>Pienso ('+D.mon+' por kg)</span><input type="text" inputmode="decimal" id="gl_pi" value="'+D.pienso+'"></label></div><div id="gl_out">'+galCalc(15,D.huevos,D.precio,D.pienso)+'</div></section>';
+  h+='<section class="panel"><h2>Qué dice la ley</h2><ul class="rules">'+LEG.map(function(x){return '<li><b>'+esc(x[0])+':</b> '+esc(x[1])}).join('</li>')+'</li></ul><p class="hint">Resumen de las fuentes citadas, sin valor de asesoría legal. '+(co?'Confirma con el ICA y la alcaldía.':'El manual de huevos es de otra región (Friuli): confirma con la ASL de Viterbo.')+'</p></section>';
+  h+='<section class="panel"><h2>Errores comunes de quien empieza</h2><ul class="rules"><li>Comprar muchas aves sin tener gallinero y recinto listos.</li><li>Dejar el gallinero sin protección contra zorros, rapaces y roedores.</li><li>No llevar registros de producción, alimento y sanidad.</li><li>Vender fuera del radio permitido sin cumplir el embalaje.</li><li>Suponer que todas las gallinas ponen igual todo el año: baja con la muda y la edad.</li></ul></section>';
+  h+='<section class="panel"><h2>Fuentes</h2><ul class="rules">'+FUE.map(function(f){return '<li><a href="'+f[1]+'" target="_blank" rel="noopener">'+esc(f[0])+'</a></li>'}).join('')+'</ul></section>';
+  return h;
+}
 function vBiblioteca(){
   var D=apiD(),co=S.lib.pais==='Colombia',PASOS=co?PASOS_CO:PASOS_ES,LEG=co?LEGAL_CO:LEGAL_ES,FUE=co?FUENTES_CO:FUENTES_ES;
   var h='<div class="stack">';
   h+='<section class="panel"><h2>Biblioteca de autosuficiencia</h2><p class="muted">Guías para producir tu propia comida y generar ingresos con la tierra. Cada guía trae pasos, presupuesto, calendario y fuentes.</p>'+
-   '<div class="chips"><button class="chip" aria-pressed="true">Apiario</button>'+['Hidroponía','Piscicultura','Gallinas','Cerdos','Vacas','Comparativa'].map(function(x){return '<button class="chip" disabled style="opacity:.55;cursor:not-allowed">'+x+' · próximamente</button>'}).join('')+'</div></section>';
+   '<div class="chips"><button class="chip" data-act="libguia" data-v="apiario" aria-pressed="'+(S.lib.guia!=='gallinas')+'">Apiario</button><button class="chip" data-act="libguia" data-v="gallinas" aria-pressed="'+(S.lib.guia==='gallinas')+'">Gallinas</button>'+['Hidroponía','Piscicultura','Cerdos','Vacas','Comparativa'].map(function(x){return '<button class="chip" disabled style="opacity:.55;cursor:not-allowed">'+x+' · próximamente</button>'}).join('')+'</div></section>';
+  if(S.lib.guia==='gallinas')return h+vGallinas()+'</div>';
   h+='<section class="panel"><h2>Apiario: de cero a la primera cosecha</h2><div class="chips"><button class="chip" data-act="libpais" data-v="Italia" aria-pressed="'+(!co)+'">Italia</button><button class="chip" data-act="libpais" data-v="Colombia" aria-pressed="'+co+'">Colombia</button></div>'+
    '<dl class="figs"><div><dt>Colmenas para empezar</dt><dd>2 a 4</dd><span class="sub">hasta 8 con experiencia</span></div><div><dt>Miel por colmena</dt><dd>'+(co?'~40 kg':'20–30 kg')+'</dd><span class="sub">'+(co?'según datos de Antioquia':'hasta 40–50 kg un buen año')+'</span></div><div><dt>Inversión (4 colmenas)</dt><dd>'+(function(){var c=calcPresu(D,4);return fmt(c.lo)+'–'+fmt(c.hi)+' '+D.mon})()+'</dd></div></dl>'+
    '<p class="muted">'+(co?'Colombia no tiene invierno: las abejas están activas todo el año y la cosecha depende de las floraciones y de las lluvias de tu zona. La abeja africanizada rinde bien pero es defensiva. Fedeabejas calcula que la miel nacional cubre entre el 20% y el 30% de la demanda.':'Una hectárea sobra para un apiario: las abejas buscan néctar en un radio de unos 3 km, y además polinizan frutales, hortalizas y aromáticas de tu terreno. El avellano no, porque se poliniza con el viento.')+'</p></section>';
@@ -961,6 +1043,7 @@ document.addEventListener('click',function(e){
   if(e.target.closest('[data-stop]')&&el.dataset.act==='abrir'&&el.tagName==='ARTICLE')return;
   var a=el.dataset.act,id=el.dataset.id;
   if(a==='cmp')return;
+  if(a==='libguia'){S.lib.guia=el.dataset.v;render();return}
   if(a==='libpais'){S.lib.pais=el.dataset.v;render();return}
   if(a==='salir'){logout();return}
   if(a==='abrir'){openDrawer({type:'terreno',id:id});return}
@@ -1012,6 +1095,7 @@ document.addEventListener('change',function(e){
 });
 document.addEventListener('input',function(e){
   var el=e.target;
+  if(el.id==='gl_n'||el.id==='gl_h'||el.id==='gl_p'||el.id==='gl_pi'){var go=$('gl_out');if(go)go.innerHTML=galCalc(parseNum($('gl_n').value),parseNum($('gl_h').value),parseNum($('gl_p').value),parseNum($('gl_pi').value));return}
   if(el.id&&el.id.indexOf('hp_')===0){var ho=$('hp_out');if(ho)ho.innerHTML=hipoCalc();return}
   if(el.id==='cal_n'||el.id==='cal_kg'||el.id==='cal_p'){var o=$('cal_out');if(o)o.innerHTML=calcHtml(parseNum($('cal_n').value),parseNum($('cal_kg').value),parseNum($('cal_p').value));return}
   if(el.id==='q'){S.f.q=el.value;var pos=el.selectionStart;render();var q=$('q');if(q){q.focus();try{q.setSelectionRange(pos,pos)}catch(x){}}return}
