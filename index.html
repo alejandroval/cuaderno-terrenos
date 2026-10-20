@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cuaderno de Terrenos</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@400;500;600&display=swap">
+<style>
+/* Concepto: hoja de catasto. Papel frío, tinta azul de plano, datos en monoespaciada. */
+:root{
+  --bg:#EBEFED; --surface:#F8FAF9; --surface-2:#DFE6E2; --ink:#16212B; --ink-2:#44535E; --ink-3:#7B8993;
+  --line:#C8D1CD; --accent:#234A7D; --accent-ink:#FFFFFF; --accent-soft:#DCE6F3;
+  --good:#277A49; --good-soft:#DCEEE3; --warn:#9A6210; --warn-soft:#F4E7CF; --bad:#A63A2B; --bad-soft:#F5DDD8;
+  --shadow:0 1px 2px rgba(22,33,43,.08), 0 8px 24px rgba(22,33,43,.10);
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1517; --surface:#172023; --surface-2:#212D31; --ink:#E4EBE8; --ink-2:#A3B1AE; --ink-3:#74847F;
+    --line:#2C3C40; --accent:#8DB3EA; --accent-ink:#0F1517; --accent-soft:#1E3047;
+    --good:#6FCB93; --good-soft:#18342A; --warn:#E0A64A; --warn-soft:#38301B; --bad:#EE8A79; --bad-soft:#3E2420;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.45);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1517; --surface:#172023; --surface-2:#212D31; --ink:#E4EBE8; --ink-2:#A3B1AE; --ink-3:#74847F;
+  --line:#2C3C40; --accent:#8DB3EA; --accent-ink:#0F1517; --accent-soft:#1E3047;
+  --good:#6FCB93; --good-soft:#18342A; --warn:#E0A64A; --warn-soft:#38301B; --bad:#EE8A79; --bad-soft:#3E2420;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.45);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1120px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.01em;margin:0;text-wrap:balance}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+header.top{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:flex-end;justify-content:space-between;padding-bottom:14px}
+header.top h1{font-size:clamp(26px,5vw,36px);line-height:1.05}
+header.top p{margin:4px 0 0;color:var(--ink-2);font-size:14px}
+#status{font:500 12px var(--mono);color:var(--ink-2);display:flex;gap:6px;align-items:center}
+#status i{width:8px;height:8px;border-radius:50%;background:var(--good);display:inline-block}
+#status.off i{background:var(--warn)}
+nav.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px;overflow-x:auto}
+nav.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;font:600 15px var(--body);color:var(--ink-2);white-space:nowrap}
+nav.tabs button[aria-current="page"]{color:var(--accent);border-bottom-color:var(--accent)}
+nav.tabs .n{font:500 11px var(--mono);background:var(--accent);color:var(--accent-ink);border-radius:9px;padding:1px 6px;margin-left:6px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.bar .grow{flex:1 1 220px;min-width:0}
+input[type=text],select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 10px;width:100%;min-width:0}
+input[type=text]:hover,select:hover,textarea:hover{border-color:var(--ink-3)}
+select{width:auto}
+.btn{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 12px;font-weight:600;font-size:14px}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.pri:hover{filter:brightness(1.1);color:var(--accent-ink)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.danger.arm{background:var(--bad);color:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.chip{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:14px;font-weight:500}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip .mono{font-size:12px;opacity:.8;margin-left:4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:12px;cursor:pointer;min-width:0}
+.card:hover{border-color:var(--accent);box-shadow:var(--shadow)}
+.card.dim{opacity:.62}
+.card-top{display:flex;gap:12px;align-items:flex-start}
+.ct{flex:1;min-width:0}
+.ct h3{font-size:17px;line-height:1.2;overflow-wrap:anywhere}
+.ct p{margin:2px 0 0;font-size:13px;color:var(--ink-2)}
+.ring{--s:48px;width:var(--s);height:var(--s);border-radius:50%;background:conic-gradient(var(--c) calc(var(--p)*1%),var(--surface-2) 0);display:grid;place-items:center;position:relative;flex:none}
+.ring::before{content:"";position:absolute;inset:calc(var(--s)*.1);border-radius:50%;background:var(--surface)}
+.ring b{position:relative;font:500 calc(var(--s)*.34) var(--mono)}
+.figs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0}
+.figs dt{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3)}
+.figs dd{margin:0;font:500 14px var(--mono);overflow-wrap:anywhere}
+.figs .sub{display:block;font:400 11px var(--mono);color:var(--ink-3)}
+.tags{display:flex;flex-wrap:wrap;gap:5px}
+.tag{font-size:12px;border:1px solid var(--line);border-radius:4px;padding:1px 7px;color:var(--ink-2)}
+.tag.good{background:var(--good-soft);border-color:transparent;color:var(--good)}
+.tag.bad{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+.tag.warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.card-foot{display:flex;gap:10px;align-items:center;justify-content:space-between;font-size:13px;margin-top:auto}
+.card-foot a{color:var(--accent)}
+.pill{font-size:12px;font-weight:600;border-radius:999px;padding:2px 10px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2)}
+.pill.mapeado{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.pill.contactado{background:var(--good-soft);color:var(--good);border-color:transparent}
+.pill.descartado{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.cmp{display:flex;gap:5px;align-items:center;font-size:12px;color:var(--ink-2);cursor:pointer}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:8px;padding:28px 20px;text-align:center;color:var(--ink-2)}
+.empty h2{font-size:20px;color:var(--ink);margin-bottom:6px}
+.empty .bar{justify-content:center;margin:14px 0 0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.panel h2{font-size:19px;margin-bottom:8px}
+.stack{display:flex;flex-direction:column;gap:16px}
+.rules{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:15px}
+.muted{color:var(--ink-2);font-size:14px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;min-width:150px}
+th:first-child,td:first-child{position:sticky;left:0;background:var(--surface);min-width:130px;font-weight:600;color:var(--ink-2);z-index:1}
+tr:last-child td{border-bottom:0}
+td.best{background:var(--good-soft);color:var(--good);font-weight:600}
+.chart{position:relative;margin-top:6px}
+.axis{display:grid;grid-template-columns:repeat(4,1fr);font:400 11px var(--mono);color:var(--ink-3);padding-bottom:4px;border-bottom:1px solid var(--line)}
+.axis span:last-child{text-align:right}
+.zrow{padding:10px 0;border-bottom:1px solid var(--line)}
+.zrow:last-child{border-bottom:0}
+.zhead{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;justify-content:space-between;margin-bottom:6px}
+.zhead b{font-family:var(--display);font-size:15px}
+.zhead span{font:400 12px var(--mono);color:var(--ink-2)}
+.track{position:relative;background-image:repeating-linear-gradient(to right,var(--line) 0,var(--line) 1px,transparent 1px,transparent 25%);background-size:100% 100%;border-radius:4px}
+.band{position:absolute;top:0;bottom:0;min-width:4px;background:var(--accent-soft);border:1px solid var(--accent);border-radius:3px;opacity:.9}
+.dot{position:absolute;width:14px;height:14px;margin-left:-7px;border-radius:50%;border:2px solid var(--surface);background:var(--accent);padding:0;box-shadow:0 0 0 1px var(--ink-3)}
+.dot.descartado{background:var(--bad)}
+.dot.por_revisar{background:var(--ink-3)}
+.dot.contactado{background:var(--good)}
+.dot.off{border-radius:3px;margin-left:-14px;width:14px}
+details.zd{margin-top:8px;font-size:14px}
+details.zd summary{cursor:pointer;color:var(--accent);font-weight:600}
+details.zd dl{margin:8px 0 0;display:grid;gap:8px}
+details.zd dt{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3)}
+details.zd dd{margin:0}
+.crit{display:grid;grid-template-columns:minmax(0,1fr) minmax(140px,220px) 44px;gap:6px 14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.crit:last-child{border-bottom:0}
+.crit b{font-weight:600}
+.crit small{display:block;color:var(--ink-2);font-size:13px}
+.crit input[type=range]{width:100%;accent-color:var(--accent)}
+.crit output{font:500 14px var(--mono);text-align:right}
+@media (max-width:560px){.crit{grid-template-columns:minmax(0,1fr) 44px}.crit .rng{grid-column:1/-1;order:3}}
+/* Cajón lateral */
+.scrim{position:fixed;inset:0;background:rgba(10,16,18,.5);z-index:20}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(620px,100%);background:var(--bg);z-index:21;display:flex;flex-direction:column;box-shadow:var(--shadow)}
+.dh{padding:calc(14px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) 12px 16px;display:flex;gap:12px;align-items:flex-start;justify-content:space-between;border-bottom:1px solid var(--line);background:var(--surface)}
+.dh h2{font-size:20px;overflow-wrap:anywhere}
+.dh p{margin:2px 0 0;font-size:13px;color:var(--ink-2)}
+.db{flex:1;overflow-y:auto;padding:16px calc(16px + env(safe-area-inset-right,0px)) 16px 16px;display:flex;flex-direction:column;gap:16px}
+.df{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;padding:12px calc(16px + env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) 16px;border-top:1px solid var(--line);background:var(--surface)}
+.fs{border:0;padding:0;margin:0;min-width:0}
+.fs legend{font:700 13px var(--display);text-transform:uppercase;letter-spacing:.08em;color:var(--accent);padding:0;margin-bottom:8px}
+.fg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.fld{display:flex;flex-direction:column;gap:3px;min-width:0}
+.fld.full{grid-column:1/-1}
+.fld span{font-size:12px;color:var(--ink-2);font-weight:600}
+.fld select{width:100%}
+textarea{resize:vertical;min-height:64px}
+@media (max-width:480px){.fg{grid-template-columns:minmax(0,1fr)}}
+.live{display:flex;flex-direction:column;gap:10px}
+.live-top{display:flex;gap:14px;align-items:center}
+.live-top p{margin:0;font-size:14px;color:var(--ink-2)}
+.live-top p b{color:var(--ink)}
+.fbar{display:grid;grid-template-columns:minmax(0,150px) 1fr 40px;gap:8px;align-items:center;font-size:13px}
+.fbar .t{height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden}
+.fbar .t i{display:block;height:100%;background:var(--accent)}
+.fbar em{font:400 12px var(--mono);color:var(--ink-3);font-style:normal;text-align:right}
+.cost{width:100%;font-size:14px}
+.cost td{min-width:0;padding:5px 0;border-bottom:1px dashed var(--line)}
+.cost td:first-child{position:static;background:none;font-weight:400;color:var(--ink-2)}
+.cost td:last-child{text-align:right;font:500 13px var(--mono)}
+.cost tr.tot td{font-weight:700;color:var(--ink);border-bottom:0}
+.chk{display:flex;flex-direction:column;gap:6px}
+.chk label{display:flex;gap:8px;align-items:flex-start;font-size:14px;cursor:pointer}
+.chk input{margin-top:4px;accent-color:var(--accent)}
+.hint{font-size:13px;color:var(--ink-2);margin:6px 0 0}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:14px;z-index:40;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s,box-shadow .15s}}
+body{margin:0}
+#login{max-width:420px;margin:12vh auto 0;padding-inline:max(16px,env(safe-area-inset-left,0px))}
+#login p{color:var(--ink-2)}
+#login .fld{margin:14px 0}
+#login .row{display:flex;gap:8px;flex-wrap:wrap}
+</style>
+</head><body>
+<div id="login" hidden></div>
+
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Cuaderno de Terrenos</h1>
+      <p>Lazio, Umbria y Abruzzo: precios, superficie, normativa y puntuación para decidir.</p>
+    </div>
+    <div id="status" class="off"><i></i><span>Conectando…</span></div>
+  </header>
+  <nav class="tabs" aria-label="Secciones">
+    <button data-tab="terrenos">Terrenos</button>
+    <button data-tab="comparar">Comparar <span class="n" id="ncmp" hidden></span></button>
+    <button data-tab="zonas">Zonas y normativa</button>
+    <button data-tab="criterios">Criterios</button><button data-act="salir" style="margin-left:auto">Salir</button>
+  </nav>
+  <main id="view"></main>
+</div>
+<div id="layer"></div>
+<div id="toast" hidden></div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+(function(){
+'use strict';
+var ESTADOS={por_revisar:'Por revisar',mapeado:'Mapeado',contactado:'Contactado',descartado:'Descartado'};
+var OPT={
+  relieve:{desconocido:'Sin dato',llano:'Llano',leve:'Pendiente leve',medio:'Pendiente media',ladera:'Ladera'},
+  acceso:{desconocido:'Sin dato',asfalto:'Asfaltado',sterrato:'Camino de tierra',sentiero:'Solo sendero'},
+  agua:{desconocido:'Sin dato',riego:'Riego',pozo:'Pozo',red:'Red de agua',fosso:'Arroyo (fosso)',ninguna:'Sin agua'},
+  luz:{desconocido:'Sin dato',si:'Con electricidad',no:'Sin electricidad'},
+  parque:{desconocido:'Sin dato',si:'Dentro de parque',no:'Fuera de parque'},
+  fuente:{Immobiliare:'Immobiliare.it',Idealista:'Idealista',Subito:'Subito',Otro:'Otro'}
+};
+var SC={
+  relieve:{llano:1,leve:.8,medio:.45,ladera:.15},
+  acceso:{asfalto:1,sterrato:.65,sentiero:.1},
+  agua:{riego:1,pozo:1,red:.9,fosso:.4,ninguna:0},
+  luz:{si:1,no:0},
+  parque:{si:.2,no:1}
+};
+var FACT=[
+  {k:'precio',l:'Precio frente a la zona',d:'Compara el €/ha del terreno con el punto medio del rango de la zona. Mitad del precio medio = 100%, igual al medio = 50%, 1,5 veces el medio o más = 0%.'},
+  {k:'servicios',l:'Agua y electricidad',d:'Promedio de lo que se conoce: riego o pozo = 100%, red de agua 90%, arroyo 40%, sin agua 0%; con electricidad 100%, sin ella 0%.'},
+  {k:'acceso',l:'Acceso',d:'Asfaltado 100%, camino de tierra 65%, solo sendero 10%.'},
+  {k:'relieve',l:'Relieve',d:'Llano 100%, pendiente leve 80%, media 45%, ladera 15%.'},
+  {k:'superficie',l:'Superficie',d:'Una hectárea (10.000 m²) o más = 100%; menos se reduce en proporción.'},
+  {k:'mercado',l:'Mercado del cultivo',d:'Valoración manual de 1 a 5 de lo sólida que es la salida comercial de lo que hay o de lo que se puede plantar.'},
+  {k:'aptitud',l:'Aptitud agrícola de la zona',d:'Valoración de 1 a 5 de la zona de referencia. Se edita en Zonas y normativa.'},
+  {k:'restricciones',l:'Restricciones (parque)',d:'Fuera de parque 100%, dentro de parque nacional 20%.'}
+];
+var PESOS0={precio:3,servicios:2,acceso:2,relieve:1.5,superficie:2,mercado:3,aptitud:2,restricciones:1};
+var CHECK=[
+  ['cdu','Certificato di destinazione urbanistica (CDU) pedido al comune'],
+  ['catasto','Visura catastale y mapa: superficie real igual a la del anuncio'],
+  ['ipoteca','Visura ipotecaria: sin hipotecas ni embargos'],
+  ['prelazione','Prelazione agraria: arrendatario o colindantes CD/IAP verificados por el notaio'],
+  ['vincoli','Vínculos paesaggistico, idrogeologico o de parque revisados'],
+  ['servitu','Servidumbres y acceso rodado confirmados por escrito'],
+  ['fabbricati','Edificaciones existentes (casetas, ruderi) regularizadas en catasto y urbanística'],
+  ['agua','Agua: pozo con denuncia o concesión, o riego de consorcio'],
+  ['luz','Electricidad: contador o allaccio posible y su coste'],
+  ['ufficio','Ufficio tecnico del comune: qué estructuras o serre se permiten'],
+  ['costes','Costes totales confirmados con notaio y agencia'],
+  ['suelo','Visita al terreno y análisis de suelo antes de firmar']
+];
+var TFIELDS=[
+ {g:'Anuncio',f:[
+  {k:'nombre',l:'Nombre o referencia',t:'text',full:1},
+  {k:'url',l:'Enlace del anuncio',t:'text',full:1},
+  {k:'fuente',l:'Portal',t:'sel',o:OPT.fuente,def:'Otro'},
+  {k:'estado',l:'Estado',t:'sel',o:ESTADOS,def:'por_revisar'},
+  {k:'fecha_anuncio',l:'Fecha del anuncio',t:'text'}]},
+ {g:'Ubicación y precio',f:[
+  {k:'comune',l:'Comune',t:'text'},
+  {k:'provincia',l:'Provincia',t:'text'},
+  {k:'zona',l:'Zona de referencia',t:'zona',full:1},
+  {k:'precio',l:'Precio (€)',t:'num'},
+  {k:'m2',l:'Superficie (m²)',t:'num'},
+  {k:'precio_nota',l:'Nota sobre el precio',t:'text',full:1}]},
+ {g:'Terreno',f:[
+  {k:'relieve',l:'Relieve',t:'sel',o:OPT.relieve,def:'desconocido'},
+  {k:'acceso',l:'Acceso',t:'sel',o:OPT.acceso,def:'desconocido'},
+  {k:'agua',l:'Agua',t:'sel',o:OPT.agua,def:'desconocido'},
+  {k:'luz',l:'Electricidad',t:'sel',o:OPT.luz,def:'desconocido'},
+  {k:'parque',l:'Parque nacional',t:'sel',o:OPT.parque,def:'desconocido'},
+  {k:'mercado',l:'Mercado del cultivo',t:'rate'},
+  {k:'cultivo',l:'Qué hay plantado',t:'text',full:1}]},
+ {g:'Notas',f:[
+  {k:'ventajas',l:'Ventajas',t:'area',full:1},
+  {k:'desventajas',l:'Desventajas',t:'area',full:1},
+  {k:'notas',l:'Notas',t:'area',full:1}]}
+];
+var ZFIELDS=[
+  {g:'Zona',f:[
+   {k:'nombre',l:'Nombre',t:'text',full:1},
+   {k:'ref_min',l:'Precio de referencia mínimo (€/ha)',t:'num'},
+   {k:'ref_max',l:'Precio de referencia máximo (€/ha)',t:'num'},
+   {k:'aptitud',l:'Aptitud agrícola (1 a 5)',t:'rate'},
+   {k:'fuente',l:'Fuente de los precios',t:'area',full:1},
+   {k:'clima',l:'Clima',t:'area',full:1},
+   {k:'cultivos',l:'Cultivos con mercado',t:'area',full:1},
+   {k:'normativa',l:'Normativa a tener en cuenta',t:'area',full:1}]}
+];
+var S={view:'terrenos',terrenos:[],zonas:[],pesos:null,db:null,sample:null,downloads:null,ready:false,dbOff:false,err:null,
+  f:{q:'',estado:'',zona:'',orden:'score'},compare:[],drawer:null};
+try{var cs=JSON.parse(localStorage.getItem('ct_compare')||'[]');if(Array.isArray(cs))S.compare=cs.slice(0,4)}catch(e){}
+var Q={};
+function enqueue(key,fn){var p=(Q[key]||Promise.resolve()).then(fn);Q[key]=p.catch(function(){});return p}
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+var nf=new Intl.NumberFormat('de-DE',{maximumFractionDigits:0});
+function fmt(n){return n==null||isNaN(n)?'—':nf.format(Math.round(n))}
+function eur(n){return n==null||isNaN(n)?'—':fmt(n)+' €'}
+function ha(m2){return m2>0?(m2/10000).toLocaleString('de-DE',{maximumFractionDigits:2})+' ha':''}
+function clamp(x,a,b){return Math.max(a,Math.min(b,x))}
+function parseNum(s){
+  if(s==null)return null; s=String(s).replace(/\s|€|m²/g,''); if(s==='')return null;
+  if(s.indexOf(',')>-1)s=s.replace(/\./g,'').replace(',','.');
+  else if(/^\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');
+  var n=parseFloat(s); return isNaN(n)?null:n;
+}
+function slug(s){return String(s||'x').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'x'}
+function toast(m){var t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(function(){t.hidden=true},2600)}
+function zona(id){for(var i=0;i<S.zonas.length;i++)if(S.zonas[i].id===id)return S.zonas[i];return null}
+function ppha(t){return t.precio>0&&t.m2>0?t.precio/(t.m2/10000):null}
+function factors(t){
+  var z=zona(t.zona),f={},p=ppha(t);
+  if(p!=null&&z&&z.ref_min!=null&&z.ref_max!=null&&(z.ref_min+z.ref_max)>0){f.precio=clamp(1.5-p/((z.ref_min+z.ref_max)/2),0,1)}else f.precio=null;
+  var sv=[];if(SC.agua[t.agua]!=null)sv.push(SC.agua[t.agua]);if(SC.luz[t.luz]!=null)sv.push(SC.luz[t.luz]);
+  f.servicios=sv.length?sv.reduce(function(a,b){return a+b},0)/sv.length:null;
+  f.acceso=SC.acceso[t.acceso]!=null?SC.acceso[t.acceso]:null;
+  f.relieve=SC.relieve[t.relieve]!=null?SC.relieve[t.relieve]:null;
+  f.superficie=t.m2>0?clamp(t.m2/10000,0,1):null;
+  f.mercado=t.mercado!=null&&t.mercado!==''?clamp(Number(t.mercado)/5,0,1):null;
+  f.aptitud=z&&z.aptitud!=null&&z.aptitud!==''?clamp(Number(z.aptitud)/5,0,1):null;
+  f.restricciones=SC.parque[t.parque]!=null?SC.parque[t.parque]:null;
+  return f;
+}
+function score(t){
+  var f=factors(t),w=S.pesos||PESOS0,num=0,den=0,all=0;
+  for(var k in PESOS0){var wk=Number(w[k]!=null?w[k]:PESOS0[k]);all+=wk;if(f[k]!=null){num+=wk*f[k];den+=wk}}
+  return{pct:den>0?Math.round(100*num/den):null,conf:all>0?den/all:0,f:f};
+}
+function costos(precio,agencia){
+  if(!(precio>0))return null;
+  var reg=Math.max(precio*.15,1000),ipo=100,not=[1500,2500],ag=agencia?[precio*.02*1.22,precio*.03*1.22]:[0,0];
+  return{reg:reg,ipo:ipo,not:not,ag:ag,min:precio+reg+ipo+not[0]+ag[0],max:precio+reg+ipo+not[1]+ag[1]};
+}
+function ring(pct,size){
+  var c=pct==null?'var(--ink-3)':pct>=70?'var(--good)':pct>=50?'var(--warn)':'var(--bad)';
+  return '<span class="ring" style="--p:'+(pct==null?0:pct)+';--c:'+c+';--s:'+(size||48)+'px"><b>'+(pct==null?'–':pct)+'</b></span>';
+}
+function tagsFor(t){
+  var a=[];
+  if(t.relieve==='llano')a.push(['Llano','good']);else if(t.relieve==='ladera')a.push(['Ladera','bad']);else if(t.relieve==='leve'||t.relieve==='medio')a.push([OPT.relieve[t.relieve],'']);
+  if(t.agua==='riego'||t.agua==='pozo'||t.agua==='red')a.push([OPT.agua[t.agua],'good']);else if(t.agua==='ninguna')a.push(['Sin agua','bad']);else if(t.agua==='fosso')a.push(['Arroyo','warn']);
+  if(t.luz==='si')a.push(['Electricidad','good']);else if(t.luz==='no')a.push(['Sin electricidad','bad']);
+  if(t.acceso==='asfalto')a.push(['Asfalto','good']);else if(t.acceso==='sterrato')a.push(['Camino de tierra','']);else if(t.acceso==='sentiero')a.push(['Solo sendero','bad']);
+  if(t.parque==='si')a.push(['Parque nacional','warn']);
+  return a.map(function(x){return '<span class="tag '+x[1]+'">'+esc(x[0])+'</span>'}).join('');
+}
+function statusHtml(){
+  var el=$('status');
+  if(S.dbOff){el.className='off';el.innerHTML='<i></i><span>Sin base de datos: abre la página con tu sesión iniciada</span>'}
+  else if(S.err){el.className='off';el.innerHTML='<i></i><span>Error al leer los datos</span>'}
+  else if(!S.ready){el.className='off';el.innerHTML='<i></i><span>Conectando…</span>'}
+  else{el.className='';el.innerHTML='<i></i><span>Guardado en Supabase · '+S.terrenos.length+' terrenos</span>'}
+}
+/* ---------- Vistas ---------- */
+function visibles(){
+  var q=S.f.q.trim().toLowerCase();
+  var a=S.terrenos.filter(function(t){
+    if(S.f.estado&&(t.estado||'por_revisar')!==S.f.estado)return false;
+    if(S.f.zona&&t.zona!==S.f.zona)return false;
+    if(q&&[t.nombre,t.comune,t.provincia,t.cultivo,t.notas].join(' ').toLowerCase().indexOf(q)<0)return false;
+    return true;
+  }).map(function(t){return{t:t,s:score(t),p:ppha(t)}});
+  var o=S.f.orden;
+  a.sort(function(x,y){
+    function nul(v,d){return v==null?(d==='asc'?Infinity:-Infinity):v}
+    if(o==='score')return nul(y.s.pct,'desc')-nul(x.s.pct,'desc');
+    if(o==='precio')return nul(x.t.precio,'asc')-nul(y.t.precio,'asc');
+    if(o==='pha')return nul(x.p,'asc')-nul(y.p,'asc');
+    if(o==='m2')return nul(y.t.m2,'desc')-nul(x.t.m2,'desc');
+    return String(x.t.nombre).localeCompare(String(y.t.nombre));
+  });
+  return a;
+}
+function vTerrenos(){
+  if(!S.ready)return '<div class="empty"><h2>Cargando tus terrenos…</h2><p>Un momento.</p></div>';
+  if(S.dbOff)return '<div class="empty"><h2>No hay base de datos en esta vista</h2><p>Los terrenos se guardan en tu cuenta. Abre este enlace con tu sesión de Claude iniciada para verlos y editarlos.</p></div>';
+  var counts={};S.terrenos.forEach(function(t){var e=t.estado||'por_revisar';counts[e]=(counts[e]||0)+1});
+  var chips='<button class="chip" data-act="fest" data-v="" aria-pressed="'+(!S.f.estado)+'">Todos<span class="mono">'+S.terrenos.length+'</span></button>';
+  Object.keys(ESTADOS).forEach(function(k){chips+='<button class="chip" data-act="fest" data-v="'+k+'" aria-pressed="'+(S.f.estado===k)+'">'+ESTADOS[k]+'<span class="mono">'+(counts[k]||0)+'</span></button>'});
+  var zopts='<option value="">Todas las zonas</option>'+S.zonas.map(function(z){return '<option value="'+esc(z.id)+'"'+(S.f.zona===z.id?' selected':'')+'>'+esc(z.nombre)+'</option>'}).join('');
+  var oopts=[['score','Mejor puntuación'],['pha','Menor €/ha'],['precio','Menor precio'],['m2','Mayor superficie'],['nombre','Nombre']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.orden===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('');
+  var h='<div class="bar"><input class="grow" type="text" id="q" placeholder="Buscar por nombre, comune o cultivo" value="'+esc(S.f.q)+'" aria-label="Buscar"><select id="fz" aria-label="Zona">'+zopts+'</select><select id="fo" aria-label="Ordenar">'+oopts+'</select></div>';
+  h+='<div class="bar"><button class="btn pri" data-act="nuevo">Nuevo terreno</button><button class="btn" data-act="importar">Pegar anuncio</button>'+(S.downloads?'<button class="btn" data-act="csv">Exportar CSV</button>':'')+'</div>';
+  h+='<div class="chips">'+chips+'</div>';
+  if(!S.terrenos.length)return h+'<div class="empty"><h2>Aún no hay terrenos</h2><p>Pega el texto de un anuncio de Immobiliare, Idealista o Subito, o crea la primera ficha a mano.</p></div>';
+  var list=visibles();
+  if(!list.length)return h+'<div class="empty"><h2>Nada con esos filtros</h2><p>Cambia el estado, la zona o la búsqueda.</p></div>';
+  h+='<div class="grid">'+list.map(function(r){
+    var t=r.t,z=zona(t.zona),p=r.p,cmpOn=S.compare.indexOf(t.id)>-1,est=t.estado||'por_revisar';
+    return '<article class="card'+(est==='descartado'?' dim':'')+'" data-act="abrir" data-id="'+esc(t.id)+'">'+
+      '<div class="card-top">'+ring(r.s.pct,48)+'<div class="ct"><h3>'+esc(t.nombre||'Sin nombre')+'</h3><p>'+esc([t.comune,t.provincia].filter(Boolean).join(' · '))+(z?' · '+esc(z.nombre):'')+'</p></div>'+
+      '<label class="cmp" data-stop="1"><input type="checkbox" data-act="cmp" data-id="'+esc(t.id)+'"'+(cmpOn?' checked':'')+'> Comparar</label></div>'+
+      '<dl class="figs"><div><dt>Precio</dt><dd>'+eur(t.precio)+(t.precio_nota?'<span class="sub">precio por confirmar</span>':'')+'</dd></div>'+
+      '<div><dt>Superficie</dt><dd>'+(t.m2>0?fmt(t.m2)+' m²':'—')+'<span class="sub">'+ha(t.m2)+'</span></dd></div>'+
+      '<div><dt>€ por ha</dt><dd>'+(p!=null?fmt(p):'—')+'</dd></div></dl>'+
+      '<div class="tags">'+tagsFor(t)+'</div>'+
+      '<div class="card-foot"><span class="pill '+est+'">'+ESTADOS[est]+'</span>'+(t.url?'<a href="'+esc(t.url)+'" target="_blank" rel="noopener" data-stop="1">Ver anuncio ↗</a>':'')+'</div></article>';
+  }).join('')+'</div>';
+  return h;
+}
+function vComparar(){
+  var sel=S.compare.map(function(id){return S.terrenos.filter(function(t){return t.id===id})[0]}).filter(Boolean);
+  if(sel.length<2)return '<div class="empty"><h2>Elige al menos dos terrenos</h2><p>En la pestaña Terrenos marca “Comparar” en las fichas que quieras ver lado a lado (hasta cuatro).</p></div>';
+  var rows=sel.map(function(t){var s=score(t);return{t:t,s:s,p:ppha(t)}});
+  function best(vals,dir){var v=vals.filter(function(x){return x!=null});if(v.length<2)return -1;var b=dir==='min'?Math.min.apply(null,v):Math.max.apply(null,v);return vals.indexOf(b)}
+  function row(label,vals,show,dir){
+    var b=dir?best(vals,dir):-1;
+    return '<tr><td>'+label+'</td>'+vals.map(function(v,i){return '<td'+(i===b?' class="best"':'')+'>'+show(v,i)+'</td>'}).join('')+'</tr>';
+  }
+  var h='<div class="tablewrap"><table><thead><tr><th></th>'+rows.map(function(r){return '<th>'+esc(r.t.nombre)+'<br><button class="btn" data-act="abrir" data-id="'+esc(r.t.id)+'" style="margin-top:6px;font-size:12px;padding:3px 8px">Abrir ficha</button></th>'}).join('')+'</tr></thead><tbody>';
+  h+=row('Puntuación',rows.map(function(r){return r.s.pct}),function(v,i){return v==null?'—':'<span class="mono">'+v+'/100</span> <span class="muted">confianza '+Math.round(rows[i].s.conf*100)+'%</span>'},'max');
+  h+=row('Estado',rows.map(function(r){return r.t.estado||'por_revisar'}),function(v){return ESTADOS[v]});
+  h+=row('Precio',rows.map(function(r){return r.t.precio>0?r.t.precio:null}),function(v,i){return '<span class="mono">'+eur(v)+'</span>'+(rows[i].t.precio_nota?'<br><span class="muted">'+esc(rows[i].t.precio_nota)+'</span>':'')},'min');
+  h+=row('Superficie',rows.map(function(r){return r.t.m2>0?r.t.m2:null}),function(v){return v==null?'—':'<span class="mono">'+fmt(v)+' m²</span> <span class="muted">'+ha(v)+'</span>'},'max');
+  h+=row('€ por ha',rows.map(function(r){return r.p}),function(v){return v==null?'—':'<span class="mono">'+fmt(v)+'</span>'},'min');
+  h+=row('Zona',rows.map(function(r){return r.t.zona}),function(v){var z=zona(v);return z?esc(z.nombre):'—'});
+  [['relieve','Relieve'],['acceso','Acceso'],['agua','Agua'],['luz','Electricidad'],['parque','Parque']].forEach(function(p){
+    h+=row(p[1],rows.map(function(r){return r.t[p[0]]||'desconocido'}),function(v){return esc(OPT[p[0]][v]||v)});
+  });
+  h+=row('Qué hay plantado',rows.map(function(r){return r.t.cultivo}),function(v){return esc(v||'—')});
+  h+=row('Mercado del cultivo',rows.map(function(r){return r.t.mercado!=null&&r.t.mercado!==''?Number(r.t.mercado):null}),function(v){return v==null?'—':'<span class="mono">'+v+'/5</span>'},'max');
+  h+=row('Ventajas',rows.map(function(r){return r.t.ventajas}),function(v){return esc(v||'—')});
+  h+=row('Desventajas',rows.map(function(r){return r.t.desventajas}),function(v){return esc(v||'—')});
+  h+='</tbody></table></div><p class="hint">En verde, el mejor valor de cada fila cuando hay datos para comparar.</p>';
+  return h;
+}
+function vZonas(){
+  if(!S.ready)return '<div class="empty"><h2>Cargando zonas…</h2></div>';
+  if(S.dbOff)return '<div class="empty"><h2>No hay base de datos en esta vista</h2></div>';
+  var MAX=40000,h='<div class="stack">';
+  h+='<section class="panel"><h2>Reglas que valen en toda Italia</h2><ul class="rules">'+
+   '<li><b>Comprar como particular:</b> imposta di registro del 15% (mínimo 1.000 €), más ipotecaria y catastale fijas (unos 100 €) y notario. Con cualificación CD o IAP baja a 200 € + 200 € + 1% catastal.</li>'+
+   '<li><b>Prelazione agraria:</b> el arrendatario coltivatore diretto y los colindantes CD o IAP tienen preferencia de compra (30 días). El notaio lo verifica. Los terrenos que vende ISMEA están exentos.</li>'+
+   '<li><b>“Non edificabile”:</b> no permite vivienda. Las estructuras agrícolas dependen de la región y de tu cualificación.</li>'+
+   '<li><b>Serre:</b> las mobili stagionali sin obra de muros son edilizia libera (puede pedirse autorización paesaggistica). Las fijas necesitan permiso de construir.</li>'+
+   '<li><b>Parques y vínculos:</b> dentro de un parque nacional cualquier obra necesita nulla osta del Ente Parco.</li></ul>'+
+   '<p class="hint">Resumen orientativo. Cada comune tiene la última palabra: confirma con el notaio y el ufficio tecnico.</p></section>';
+  h+='<section class="panel"><h2>Precio de referencia frente a tus terrenos</h2><p class="muted">La banda azul es el rango de referencia de la zona en € por hectárea. Cada punto es un terreno. Un cuadrado pegado al borde derecho supera los 40.000 €/ha (parcelas pequeñas con servicios o edificaciones).</p><div class="chart"><div class="axis"><span>0</span><span>10.000</span><span>20.000</span><span>30.000 · 40.000</span></div>';
+  S.zonas.forEach(function(z){
+    var pts=S.terrenos.filter(function(t){return t.zona===z.id&&ppha(t)!=null}).map(function(t){return{t:t,p:ppha(t)}}).sort(function(a,b){return a.p-b.p});
+    var left=clamp((z.ref_min||0)/MAX*100,0,100),w=clamp(((z.ref_max||0)-(z.ref_min||0))/MAX*100,0,100-left);
+    var rng=z.ref_min===z.ref_max?fmt(z.ref_min)+' (media)':fmt(z.ref_min)+' – '+fmt(z.ref_max);
+    h+='<div class="zrow"><div class="zhead"><b>'+esc(z.nombre)+'</b><span>'+rng+' €/ha · aptitud '+(z.aptitud||'—')+'/5</span></div>'+
+      '<div class="track" style="height:'+(14+Math.max(1,Math.min(3,pts.length))*17)+'px"><div class="band" style="left:'+left+'%;width:'+w+'%"></div>'+
+      pts.map(function(r,i){var off=r.p>MAX;return '<button class="dot '+(r.t.estado||'por_revisar')+(off?' off':'')+'" style="left:'+(off?100:r.p/MAX*100)+'%;top:'+(4+(i%3)*17)+'px" data-act="abrir" data-id="'+esc(r.t.id)+'" title="'+esc(r.t.nombre)+' · '+fmt(r.p)+' €/ha" aria-label="'+esc(r.t.nombre)+', '+fmt(r.p)+' euros por hectárea"></button>'}).join('')+'</div>'+
+      '<details class="zd"><summary>Detalle de la zona</summary><dl>'+
+      [['Fuente',z.fuente],['Clima',z.clima],['Cultivos con mercado',z.cultivos],['Normativa',z.normativa]].map(function(d){return d[1]?'<div><dt>'+d[0]+'</dt><dd>'+esc(d[1])+'</dd></div>':''}).join('')+
+      '</dl><p><button class="btn" data-act="zedit" data-id="'+esc(z.id)+'">Editar zona</button></p></details></div>';
+  });
+  h+='</div><p class="bar" style="margin-top:12px"><button class="btn" data-act="znueva">Nueva zona</button></p><p class="hint">Los rangos de Sardegna y Basilicata son medias regionales de CREA (2020). Los de Lazio, Umbria y Abruzzo son orientativos: edítalos cuando tengas datos mejores.</p></section></div>';
+  return h;
+}
+function vCriterios(){
+  var w=S.pesos||PESOS0;
+  var h='<section class="panel"><h2>Cómo se calcula la puntuación</h2><p class="muted">Cada terreno recibe de 0 a 100. Se promedian los criterios que tienen dato, con el peso que fijes aquí. Si faltan datos, la puntuación se calcula con lo que hay y baja la confianza que se muestra junto a ella. Peso 0 anula un criterio.</p>';
+  FACT.forEach(function(f){
+    var v=w[f.k]!=null?w[f.k]:PESOS0[f.k];
+    h+='<div class="crit"><div><b>'+f.l+'</b><small>'+f.d+'</small></div><div class="rng"><input type="range" min="0" max="5" step="0.5" value="'+v+'" data-act="peso" data-k="'+f.k+'" aria-label="Peso de '+f.l+'"></div><output id="o_'+f.k+'">'+v+'</output></div>';
+  });
+  h+='<p class="bar" style="margin-top:12px"><button class="btn" data-act="reset">Volver a los pesos iniciales</button></p>'+
+   '<p class="hint">Las valoraciones de mercado y de aptitud de zona que vienen cargadas son estimaciones iniciales. Cámbialas en cada ficha o zona cuando tengas mejor información.</p></section>';
+  return h;
+}
+function render(){
+  statusHtml();
+  document.querySelectorAll('[data-tab]').forEach(function(b){b.setAttribute('aria-current',b.dataset.tab===S.view?'page':'false')});
+  var n=S.compare.length,nc=$('ncmp');nc.hidden=!n;nc.textContent=n;
+  var fn={terrenos:vTerrenos,comparar:vComparar,zonas:vZonas,criterios:vCriterios}[S.view];
+  $('view').innerHTML=fn();
+}
+/* ---------- Cajón ---------- */
+function fieldHtml(f,v){
+  var id='f_'+f.k,cur=v!=null?v:(f.def!=null?f.def:''),inp;
+  if(f.t==='sel'){inp='<select id="'+id+'">'+Object.keys(f.o).map(function(k){return '<option value="'+k+'"'+(String(cur)===k?' selected':'')+'>'+esc(f.o[k])+'</option>'}).join('')+'</select>'}
+  else if(f.t==='zona'){inp='<select id="'+id+'"><option value="">Sin zona</option>'+S.zonas.map(function(z){return '<option value="'+esc(z.id)+'"'+(cur===z.id?' selected':'')+'>'+esc(z.nombre)+'</option>'}).join('')+'</select>'}
+  else if(f.t==='rate'){var L={1:'1 · débil',2:'2',3:'3 · medio',4:'4',5:'5 · muy sólido'};inp='<select id="'+id+'"><option value="">Sin dato</option>'+[1,2,3,4,5].map(function(n){return '<option value="'+n+'"'+(Number(cur)===n&&cur!==''?' selected':'')+'>'+L[n]+'</option>'}).join('')+'</select>'}
+  else if(f.t==='area'){inp='<textarea id="'+id+'" rows="3">'+esc(cur)+'</textarea>'}
+  else if(f.t==='num'){inp='<input type="text" inputmode="decimal" id="'+id+'" value="'+esc(cur)+'">'}
+  else inp='<input type="text" id="'+id+'" value="'+esc(cur)+'">';
+  return '<label class="fld'+(f.full?' full':'')+'" for="'+id+'"><span>'+esc(f.l)+'</span>'+inp+'</label>';
+}
+function formHtml(schema,doc){
+  return schema.map(function(g){return '<fieldset class="fs"><legend>'+g.g+'</legend><div class="fg">'+g.f.map(function(f){return fieldHtml(f,doc[f.k])}).join('')+'</div></fieldset>'}).join('');
+}
+function collect(schema){
+  var o={};
+  schema.forEach(function(g){g.f.forEach(function(f){
+    var el=$('f_'+f.k);if(!el)return;var v=el.value;
+    if(f.t==='num')o[f.k]=parseNum(v);else if(f.t==='rate')o[f.k]=v===''?null:Number(v);else o[f.k]=v.trim();
+  })});
+  return o;
+}
+function liveHtml(t){
+  var s=score(t),p=ppha(t),z=zona(t.zona);
+  var h='<div class="live"><div class="live-top">'+ring(s.pct,64)+'<p><b>'+(s.pct==null?'Sin datos suficientes':s.pct+' de 100')+'</b><br>Confianza '+Math.round(s.conf*100)+'% · '+(p!=null?fmt(p)+' €/ha':'€/ha sin calcular')+(z?' frente a '+fmt(z.ref_min)+(z.ref_min===z.ref_max?'':' – '+fmt(z.ref_max))+' de la zona':'')+'</p></div>';
+  FACT.forEach(function(f){var v=s.f[f.k];h+='<div class="fbar"><span>'+f.l+'</span><div class="t">'+(v!=null?'<i style="width:'+Math.round(v*100)+'%"></i>':'')+'</div><em>'+(v!=null?Math.round(v*100):'sin dato')+'</em></div>'});
+  return h+'</div>';
+}
+function costHtml(precio){
+  var ag=$('agencia')?$('agencia').checked:true,c=costos(precio,ag);
+  if(!c)return '<p class="muted">Escribe el precio para estimar el coste total de compra.</p>';
+  function r(a,b){return a===b?eur(a):eur(a)+' – '+eur(b)}
+  return '<table class="cost"><tr><td>Precio publicado</td><td>'+eur(precio)+'</td></tr><tr><td>Imposta di registro (15%, mín. 1.000 €)</td><td>'+eur(c.reg)+'</td></tr><tr><td>Ipotecaria y catastale</td><td>'+eur(c.ipo)+'</td></tr><tr><td>Notaio (estimación)</td><td>'+r(c.not[0],c.not[1])+'</td></tr>'+(ag?'<tr><td>Agencia 2–3% + IVA</td><td>'+r(c.ag[0],c.ag[1])+'</td></tr>':'')+'<tr class="tot"><td>Total estimado</td><td>'+r(c.min,c.max)+'</td></tr></table>';
+}
+function openDrawer(d){S.drawer=d;drawDrawer()}
+function closeDrawer(){S.drawer=null;$('layer').innerHTML=''}
+function shell(title,sub,body,foot){
+  $('layer').innerHTML='<div class="scrim" data-act="cerrar"></div><aside class="drawer" role="dialog" aria-label="'+esc(title)+'"><div class="dh"><div><h2>'+esc(title)+'</h2>'+(sub?'<p>'+sub+'</p>':'')+'</div><button class="btn" data-act="cerrar">Cerrar</button></div><div class="db" id="db">'+body+'</div><div class="df">'+foot+'</div></aside>';
+}
+function drawDrawer(){
+  var d=S.drawer;if(!d)return;
+  if(d.type==='terreno'){
+    var t=d.id?(S.terrenos.filter(function(x){return x.id===d.id})[0]||{}):(d.prefill||{});
+    var body='<section class="panel" id="live">'+liveHtml(t)+'</section>'+formHtml(TFIELDS,t)+
+      '<section class="panel"><h2>Coste de compra como particular</h2><div id="cost">'+costHtml(t.precio)+'</div><label class="chk" style="margin-top:8px"><span style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="agencia" checked> Incluir comisión de agencia</span></label><p class="hint">Estimación. El notaio confirma las cifras finales.</p></section>';
+    if(d.id){var ck=t.checks||{};body+='<section class="panel"><h2>Checklist legal</h2><div class="chk">'+CHECK.map(function(c){return '<label><input type="checkbox" data-act="chk" data-k="'+c[0]+'"'+(ck[c[0]]?' checked':'')+'> <span>'+esc(c[1])+'</span></label>'}).join('')+'</div></section>'}
+    var sub=t.url?'<a href="'+esc(t.url)+'" target="_blank" rel="noopener" style="color:var(--accent)">Abrir anuncio ↗</a>':'';
+    shell(d.id?(t.nombre||'Terreno'):'Nuevo terreno',sub,body,'<button class="btn pri" data-act="guardar">Guardar</button>'+(d.id?'<button class="btn danger" data-act="borrar">Eliminar</button>':'<span></span>'));
+  }else if(d.type==='zona'){
+    var z=d.id?(zona(d.id)||{}):{};
+    shell(d.id?'Editar zona':'Nueva zona','',formHtml(ZFIELDS,z),'<button class="btn pri" data-act="zguardar">Guardar</button>'+(d.id?'<button class="btn danger" data-act="zborrar">Eliminar</button>':'<span></span>'));
+  }else if(d.type==='importar'){
+    shell('Pegar anuncio','Immobiliare, Idealista o Subito',
+      '<p class="muted">Abre el anuncio, selecciona todo el texto de la página (Ctrl+A), cópialo y pégalo aquí. Claude extraerá los datos y los verás en una ficha nueva para revisar antes de guardar.</p>'+
+      '<label class="fld"><span>Enlace del anuncio</span><input type="text" id="imp_url" placeholder="https://www.immobiliare.it/annunci/…"></label>'+
+      '<label class="fld"><span>Texto del anuncio</span><textarea id="imp_txt" rows="12" placeholder="Pega aquí el texto copiado"></textarea></label>'+
+      '<p class="hint" id="imp_msg">'+(S.sample?'Se usa tu cuenta de Claude y el primer uso pide permiso.':'La extracción automática no está disponible en esta vista. Usa “Nuevo terreno” y completa los datos a mano.')+'</p>',
+      '<button class="btn pri" data-act="extraer"'+(S.sample?'':' disabled')+' id="btn_ext">Extraer datos</button><span></span>');
+  }
+}
+function liveUpdate(){
+  var d=S.drawer;if(!d||d.type!=='terreno'||!$('live'))return;
+  var t=collect(TFIELDS);$('live').innerHTML=liveHtml(t);$('cost').innerHTML=costHtml(t.precio);
+}
+async function guardarTerreno(){
+  var d=S.drawer,v=collect(TFIELDS);
+  if(!v.nombre){toast('Escribe un nombre para el terreno');return}
+  var id=d.id||(slug(v.nombre)+'-'+Date.now().toString(36)),base={};
+  if(d.id){var cur=S.terrenos.filter(function(x){return x.id===d.id})[0]||{};for(var k in cur)if(k!=='id')base[k]=cur[k]}
+  var data=Object.assign(base,v,{actualizado:Date.now()});
+  try{await enqueue(id,function(){return S.db.collection('terrenos').doc(id).set(data)});toast('Guardado');closeDrawer()}
+  catch(e){toast('No se pudo guardar: '+(e&&e.code?e.code:'error'))}
+}
+async function guardarZona(){
+  var d=S.drawer,v=collect(ZFIELDS);
+  if(!v.nombre){toast('Escribe un nombre para la zona');return}
+  var id=d.id||slug(v.nombre),base={};
+  if(d.id){var cur=zona(d.id)||{};for(var k in cur)if(k!=='id')base[k]=cur[k]}
+  try{await enqueue('z'+id,function(){return S.db.collection('zonas').doc(id).set(Object.assign(base,v))});toast('Zona guardada');closeDrawer()}
+  catch(e){toast('No se pudo guardar: '+(e&&e.code?e.code:'error'))}
+}
+function guessZona(prov){
+  var p=String(prov||'').toLowerCase();
+  if(/viterbo|\bvt\b/.test(p))return'lazio-viterbo';
+  if(/perugia|terni|\bpg\b|\btr\b|umbria/.test(p))return'umbria-colinas';
+  if(/aquila|\baq\b|chieti|\bch\b|teramo|\bte\b|pescara|\bpe\b|abruzzo/.test(p))return'abruzzo-valle';
+  return'';
+}
+function oneOf(v,map,def){return v&&Object.prototype.hasOwnProperty.call(map,v)?v:def}
+async function extraer(){
+  var txt=$('imp_txt').value.trim(),url=$('imp_url').value.trim(),msg=$('imp_msg'),btn=$('btn_ext');
+  if(txt.length<40){msg.textContent='Pega el texto completo del anuncio.';return}
+  btn.disabled=true;msg.textContent='Claude está leyendo el anuncio…';
+  var prompt='Extrae datos de un anuncio de terreno en venta en Italia. Devuelve SOLO un objeto JSON con estas claves: nombre (texto corto: tipo y localidad), comune, provincia, precio (número en euros o null), m2 (número o null), relieve (llano|leve|medio|ladera|desconocido), acceso (asfalto|sterrato|sentiero|desconocido), agua (riego|pozo|red|fosso|ninguna|desconocido), luz (si|no|desconocido), parque (si|no|desconocido), cultivo (qué hay plantado, vacío si no se dice), fecha_anuncio (como aparece, vacío si no aparece), notas (una o dos frases en español con datos útiles que no encajan en otros campos, como edificaciones o dudas sobre el precio).\nReglas: no inventes nada; si un dato no aparece usa "desconocido" o null. Pianeggiante o pianura = llano; leggero dislivello = leve; medio dislivello = medio; ripido o pendio = ladera. Strada asfaltata o via pubblica = asfalto; strada sterrata o bianca = sterrato; sentiero = sentiero. Si el precio parece un marcador (por ejemplo 1.000 € para varias hectáreas), pon el número publicado en precio y explica la duda en notas. La superficie en m².\n\nTexto del anuncio:\n"""\n'+txt.slice(0,20000)+'\n"""';
+  try{
+    var r=await S.sample.json(prompt,{modelTier:'quick'});
+    if(!r||typeof r!=='object')throw{code:'invalid_json'};
+    var host='';try{host=new URL(url).hostname}catch(e){}
+    var fuente=/immobiliare/.test(host)?'Immobiliare':/idealista/.test(host)?'Idealista':/subito/.test(host)?'Subito':'Otro';
+    var pre={nombre:String(r.nombre||''),url:url,fuente:fuente,estado:'por_revisar',comune:String(r.comune||''),provincia:String(r.provincia||''),
+      zona:guessZona(r.provincia)||'',precio:typeof r.precio==='number'?r.precio:parseNum(r.precio),m2:typeof r.m2==='number'?r.m2:parseNum(r.m2),
+      relieve:oneOf(r.relieve,OPT.relieve,'desconocido'),acceso:oneOf(r.acceso,OPT.acceso,'desconocido'),agua:oneOf(r.agua,OPT.agua,'desconocido'),
+      luz:oneOf(r.luz,OPT.luz,'desconocido'),parque:oneOf(r.parque,OPT.parque,'desconocido'),cultivo:String(r.cultivo||''),fecha_anuncio:String(r.fecha_anuncio||''),notas:String(r.notas||'')};
+    openDrawer({type:'terreno',id:null,prefill:pre});toast('Datos extraídos. Revisa y guarda.');
+  }catch(e){
+    var c=e&&e.code;btn.disabled=false;
+    msg.textContent=c==='not_granted'?'Sin permiso para usar Claude en esta página.':c==='rate_limited'?'Demasiadas consultas seguidas. Espera un poco.':c==='invalid_json'?'No pude leer una respuesta válida. Prueba con más texto del anuncio.':'No se pudo extraer. Inténtalo de nuevo o usa “Nuevo terreno”.';
+  }
+}
+function csv(){
+  var cols=['nombre','comune','provincia','zona','estado','precio','m2','eur_ha','puntuacion','relieve','acceso','agua','luz','parque','cultivo','mercado','fuente','url','fecha_anuncio','notas'];
+  function q(v){v=v==null?'':String(v);return /[",\n;]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+  var lines=[cols.join(',')];
+  S.terrenos.forEach(function(t){var s=score(t),p=ppha(t);
+    lines.push(cols.map(function(c){return q(c==='eur_ha'?(p!=null?Math.round(p):''):c==='puntuacion'?(s.pct!=null?s.pct:''):t[c])}).join(','))});
+  S.downloads.save({filename:'terrenos.csv',data:'﻿'+lines.join('\n')}).then(function(){toast('Archivo guardado')}).catch(function(e){if(!e||e.code!=='declined')toast('No se pudo guardar el archivo')});
+}
+/* ---------- Eventos ---------- */
+document.addEventListener('click',function(e){
+  var tab=e.target.closest('[data-tab]');
+  if(tab){S.view=tab.dataset.tab;render();return}
+  var el=e.target.closest('[data-act]');if(!el)return;
+  if(e.target.closest('[data-stop]')&&el.dataset.act==='abrir'&&el.tagName==='ARTICLE')return;
+  var a=el.dataset.act,id=el.dataset.id;
+  if(a==='cmp')return;
+  if(a==='salir'){logout();return}
+  if(a==='abrir'){openDrawer({type:'terreno',id:id});return}
+  if(a==='cerrar'){closeDrawer();return}
+  if(a==='nuevo'){openDrawer({type:'terreno',id:null,prefill:{}});return}
+  if(a==='importar'){openDrawer({type:'importar'});return}
+  if(a==='extraer'){extraer();return}
+  if(a==='guardar'){guardarTerreno();return}
+  if(a==='csv'){csv();return}
+  if(a==='fest'){S.f.estado=el.dataset.v;render();return}
+  if(a==='zedit'){openDrawer({type:'zona',id:id});return}
+  if(a==='znueva'){openDrawer({type:'zona',id:null});return}
+  if(a==='zguardar'){guardarZona();return}
+  if(a==='borrar'||a==='zborrar'){
+    if(!el.classList.contains('arm')){el.classList.add('arm');el.textContent='Confirmar eliminación';setTimeout(function(){if(el.isConnected){el.classList.remove('arm');el.textContent='Eliminar'}},4000);return}
+    var d=S.drawer,coll=a==='borrar'?'terreno':'zona',did=d.id;
+    enqueue((a==='borrar'?'':'z')+did,function(){return S.db.collection(a==='borrar'?'terrenos':'zonas').doc(did).delete()}).then(function(){
+      S.compare=S.compare.filter(function(x){return x!==did});try{localStorage.setItem('ct_compare',JSON.stringify(S.compare))}catch(x){}
+      toast('Eliminado');closeDrawer();render()}).catch(function(){toast('No se pudo eliminar')});
+    return;
+  }
+  if(a==='reset'){enqueue('pesos',function(){return S.db.doc('config/pesos').set(Object.assign({},PESOS0))}).then(function(){toast('Pesos restablecidos')}).catch(function(){toast('No se pudo guardar')});return}
+});
+document.addEventListener('change',function(e){
+  var el=e.target,a=el.dataset&&el.dataset.act;
+  if(a==='cmp'){
+    var id=el.dataset.id,i=S.compare.indexOf(id);
+    if(el.checked&&i<0){if(S.compare.length>=4){el.checked=false;toast('Puedes comparar hasta cuatro terrenos');return}S.compare.push(id)}
+    else if(!el.checked&&i>-1)S.compare.splice(i,1);
+    try{localStorage.setItem('ct_compare',JSON.stringify(S.compare))}catch(x){}
+    var n=S.compare.length,nc=$('ncmp');nc.hidden=!n;nc.textContent=n;return;
+  }
+  if(a==='chk'&&S.drawer&&S.drawer.id){
+    var did=S.drawer.id,k=el.dataset.k,v=el.checked,o={};o[k]=v;
+    enqueue(did,function(){return S.db.collection('terrenos').doc(did).update({checks:o})}).catch(function(){el.checked=!v;toast('No se pudo guardar')});return;
+  }
+  if(a==='peso'){
+    var w=Object.assign({},PESOS0,S.pesos||{});w[el.dataset.k]=Number(el.value);
+    enqueue('pesos',function(){return S.db.doc('config/pesos').set(w)}).catch(function(){toast('No se pudo guardar')});return;
+  }
+  if(el.id==='fz'){S.f.zona=el.value;render();return}
+  if(el.id==='fo'){S.f.orden=el.value;render();return}
+  if(el.id==='agencia'){liveUpdate()}
+});
+document.addEventListener('input',function(e){
+  var el=e.target;
+  if(el.id==='q'){S.f.q=el.value;var pos=el.selectionStart;render();var q=$('q');if(q){q.focus();try{q.setSelectionRange(pos,pos)}catch(x){}}return}
+  if(el.dataset&&el.dataset.act==='peso'){var o=$('o_'+el.dataset.k);if(o)o.textContent=el.value;return}
+  if(S.drawer&&S.drawer.type==='terreno'&&el.id&&el.id.indexOf('f_')===0)liveUpdate();
+});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&S.drawer)closeDrawer()});
+/* ---------- Arranque ---------- */
+
+/* ===== Capa de datos Supabase (sustituye window.claude) ===== */
+var SUPA_URL='https://pkjiujxteufmnpglkdmi.supabase.co';
+var SUPA_KEY='sb_publishable_lni-yvu5nzR5HNqBNB3Weg_bFoQdSjy';
+var TABLA={terrenos:'terrenos_terrenos',zonas:'terrenos_zonas',config:'terrenos_config'};
+var sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+function mkSnapDoc(r){return{id:r.id,exists:true,data:function(){return r.data}}}
+function dbShim(){
+  function docRef(col,id){
+    var t=TABLA[col];
+    return{
+      set:async function(d){var r=await sb.from(t).upsert({id:id,data:d});if(r.error)throw r.error},
+      update:async function(p){
+        var g=await sb.from(t).select('data').eq('id',id).maybeSingle();if(g.error)throw g.error;
+        var cur=g.data?g.data.data:{};var nd=Object.assign({},cur);
+        for(var k in p){var v=p[k];if(v&&typeof v==='object'&&!Array.isArray(v)&&cur[k]&&typeof cur[k]==='object')nd[k]=Object.assign({},cur[k],v);else nd[k]=v}
+        var r=await sb.from(t).upsert({id:id,data:nd});if(r.error)throw r.error},
+      delete:async function(){var r=await sb.from(t).delete().eq('id',id);if(r.error)throw r.error},
+      onSnapshot:function(cb,err){
+        async function load(){var r=await sb.from(t).select('id,data').eq('id',id).maybeSingle();
+          if(r.error){err&&err(r.error);return}
+          cb(r.data?{exists:true,data:function(){return r.data.data}}:{exists:false,data:function(){return null}})}
+        load();sb.channel('d-'+t+'-'+id).on('postgres_changes',{event:'*',schema:'public',table:t},load).subscribe();
+      }
+    };
+  }
+  return{
+    collection:function(col){var t=TABLA[col];return{
+      doc:function(id){return docRef(col,id)},
+      onSnapshot:function(cb,err){
+        async function load(){var r=await sb.from(t).select('id,data').order('id');
+          if(r.error){err&&err(r.error);return}
+          cb({docs:r.data.map(mkSnapDoc)})}
+        load();sb.channel('c-'+t).on('postgres_changes',{event:'*',schema:'public',table:t},load).subscribe();
+      }}},
+    doc:function(path){var p=path.split('/');return docRef(p[0],p[1])}
+  };
+}
+var downloadsShim={save:function(o){return new Promise(function(res,rej){
+  try{var b=new Blob([o.data],{type:'text/csv;charset=utf-8'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=o.filename;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500);res({status:'saved'})}catch(e){rej({code:'unavailable'})}})}};
+function loginUI(msg){
+  document.querySelector('.wrap').hidden=true;
+  var l=document.getElementById('login');l.hidden=false;
+  l.innerHTML='<h1>Cuaderno de Terrenos</h1><p>Entra con tu correo. Te enviaremos un enlace de acceso.</p>'+
+   '<label class="fld"><span>Correo</span><input type="text" id="lg_mail" inputmode="email" autocomplete="email"></label>'+
+   '<div class="row"><button class="btn pri" id="lg_go">Enviar enlace</button></div><p id="lg_msg">'+(msg||'')+'</p>';
+  document.getElementById('lg_go').onclick=async function(){
+    var m=document.getElementById('lg_mail').value.trim();if(!m)return;
+    var r=await sb.auth.signInWithOtp({email:m,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:false}});
+    document.getElementById('lg_msg').textContent=r.error?'No se pudo enviar el enlace: '+r.error.message:'Revisa tu correo y abre el enlace desde este mismo dispositivo.';
+  };
+}
+function logout(){sb.auth.signOut().then(function(){location.reload()})}
+async function init(){
+  render();
+  var s=(await sb.auth.getSession()).data.session;
+  if(!s){loginUI();return}
+  document.querySelector('.wrap').hidden=false;document.getElementById('login').hidden=true;
+  S.db=dbShim();S.sample=null;S.downloads=downloadsShim;
+  function onErr(e){S.err=e;S.ready=true;render()}
+  S.db.collection('terrenos').onSnapshot(function(sn){S.terrenos=sn.docs.map(function(d){var o=Object.assign({},d.data());o.id=d.id;return o});S.ready=true;S.err=null;if(!S.drawer)render();else statusHtml()},onErr);
+  S.db.collection('zonas').onSnapshot(function(sn){S.zonas=sn.docs.map(function(d){var o=Object.assign({},d.data());o.id=d.id;return o});if(!S.drawer)render()},onErr);
+  S.db.doc('config/pesos').onSnapshot(function(sn){S.pesos=sn.exists?Object.assign({},sn.data()):null;if(!S.drawer)render()},onErr);
+}
+init();
+})();
+</script>
+</body></html>
