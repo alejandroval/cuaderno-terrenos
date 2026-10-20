@@ -397,7 +397,7 @@ function altAviso(t){
   });
   return out.join('. ');
 }
-var S={view:'terrenos',terrenos:[],zonas:[],pesos:null,db:null,sample:null,downloads:null,ready:false,dbOff:false,err:null,
+var S={view:'terrenos',lib:{pais:'Italia'},terrenos:[],zonas:[],pesos:null,db:null,sample:null,downloads:null,ready:false,dbOff:false,err:null,
   f:{q:'',estado:'',zona:'',edif:'',alt:'',pais:'',orden:'score'},compare:[],drawer:null};
 try{var cs=JSON.parse(localStorage.getItem('ct_compare')||'[]');if(Array.isArray(cs))S.compare=cs.slice(0,4)}catch(e){}
 var Q={};
@@ -471,7 +471,6 @@ function statusHtml(){
 
 /* ---------- Biblioteca ---------- */
 var MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-/* intensidad por mes: 0 nada, 1 poco, 2 normal, 3 pico */
 var CAL_API=[
  ['Revisar la colmena',[0,1,2,3,3,3,2,2,2,1,0,0],'Cada 7–10 días en primavera; cada 15 en verano y otoño.'],
  ['Alimentación de estímulo',[0,2,2,0,0,0,0,0,0,0,0,0],'Jarabe ligero o candito si hay poca reserva a fin de invierno.'],
@@ -489,59 +488,145 @@ var VARROA_TAB=[
  ['Otoño-invierno, sin cría','Ácido oxálico (API-Bioxal por sublimación)','Con más de 10 °C y abejas volando; sin cría'],
  ['Primavera','Solo con control de caída natural (VarroMed si hay más de 1 ácaro al día)','Repetir si caen más de 10 ácaros en 6 días']
 ];
-var PRESUPUESTO=[
- ['Colmenas nuevas completas (con alza y cuadros), unas 100 € cada una',100,100,'fuente'],
- ['Enjambres de 5 panales (100–110 € cada uno en el centro de Italia, marzo 2026)',100,110,'fuente'],
- ['Traje, guantes, ahumador y palanca (por apiario)',120,200,'est'],
- ['Alimento y jarabe del primer año (por colmena)',10,20,'est'],
- ['Tratamientos varroa al año (por colmena)',10,20,'est'],
- ['Frascos, etiquetas y filtros (por colmena)',10,25,'est']
+/* Partidas: [descripción, tipo 'col' (por colmena) o 'fijo', desde cuántas colmenas aplica, mínimo, máximo, etiqueta fuente|parcial|est] */
+var API_ES={
+ pais:'Italia',mon:'€',kg:20,precio:10,
+ kgNota:'Referencia de 20–30 kg por colmena (hasta 40–50 un buen año).',
+ precioNota:'Supuesto tuyo a ajustar: el mercado mayorista de marzo de 2026 no registró precios de miel.',
+ partidas:[
+  ['Colmena nueva completa (con alza y cuadros)','col',1,100,150,'parcial'],
+  ['Enjambre de 5 panales (100–110 € en el centro de Italia, marzo de 2026)','col',1,100,110,'fuente'],
+  ['Jarabe y alimento del primer año','col',1,10,20,'est'],
+  ['Tratamientos de varroa al año','col',1,10,20,'est'],
+  ['Frascos, etiquetas y filtros','col',1,10,25,'est'],
+  ['Traje, guantes, ahumador, palanca y cepillo','fijo',1,120,200,'est'],
+  ['Curso de iniciación','fijo',1,50,200,'est'],
+  ['Alquilar extractor y envasadora a una asociación o cooperativa','fijo',1,0,80,'est'],
+  ['Comprar extractor, maduratore y desoperculador (a partir de 10 colmenas)','fijo',10,400,1500,'est'],
+  ['Local de extracción registrado y plan HACCP (para vender, desde 20 colmenas)','fijo',20,1500,6000,'est']
+ ],
+};
+var API_CO={
+ pais:'Colombia',mon:'COP',kg:40,precio:13000,
+ kgNota:'En Antioquia una empresa reportó unos 40 kg por colmena al año (2015). Dividiendo la producción nacional entre las colmenas registradas sale cerca de 44 kg, pero es un cálculo mío.',
+ precioNota:'Precio al por mayor de unos 13.000 COP por kg en enero de 2023 (Fedeabejas). Ajústalo al precio que consigas hoy en venta directa.',
+ partidas:[
+  ['Colmena Langstroth completa','col',1,300000,400000,'fuente'],
+  ['Colonia de abejas con reina','col',1,200000,300000,'fuente'],
+  ['Alimento en épocas de escasez','col',1,10000,25000,'est'],
+  ['Manejo sanitario y mantenimiento','col',1,10000,30000,'est'],
+  ['Envases, etiquetas y rótulos','col',1,20000,60000,'est'],
+  ['Equipo de protección (overol, careta, guantes, botas)','fijo',1,150000,250000,'fuente'],
+  ['Ahumador y herramientas','fijo',1,80000,120000,'fuente'],
+  ['Insumos varios (alimentadores, cera estampada)','fijo',1,50000,100000,'fuente'],
+  ['Curso (el SENA ofrece formación apícola, a confirmar)','fijo',1,0,300000,'est'],
+  ['Prestar o alquilar un extractor','fijo',1,0,100000,'est'],
+  ['Comprar extractor y mesa de desoperculado (desde 10 colmenas)','fijo',10,800000,3000000,'est'],
+  ['Sala de extracción y envasado conforme a la norma (desde 20 colmenas)','fijo',20,5000000,20000000,'est']
+ ]
+};
+var PASOS_ES=[
+ ['Decide con los ojos abiertos','Calcula una o dos horas por visita al apiario, cada 7–10 días en primavera y menos el resto del año. Empieza con 2 a 4 colmenas: con una sola no puedes comparar y con diez no controlas los errores. Piensa que es un complemento al terreno, no un sueldo.'],
+ ['Fórmate antes de comprar nada','Haz un curso de iniciación con una asociación de apicultores de tu zona y acompaña a un apicultor local al menos una temporada: ver abrir una colmena vale más que leer. Aprende a reconocer cría sana, reina, enjambrazón y varroa.'],
+ ['Regístrate en la ASL','Un apicultor familiar o de autoconsumo se registra en la BDN directamente en la ASL; si es actividad comercial, se hace a través del SUAP del Comune. Hasta 10 colmenas cuenta como autoconsumo y los enjambres también cuentan en ese límite. Pregunta en la ASL de tu zona qué formulario usan en Lazio.'],
+ ['Elige y prepara el sitio','Sol de mañana, resguardo del viento, agua cerca, suelo seco y acceso en coche. La ley nacional (L. 313/2004) pide unos 10 m de caminos públicos y 5 m de los linderos, o una barrera de 2 m: confírmalo con tu Comune. Pon las colmenas sobre soportes a 30–40 cm del suelo, con la piquera hacia el sureste.'],
+ ['Compra las familias en abril o mayo','Enjambres o núcleos de 5 panales a un apicultor local de confianza (100–110 € en el centro de Italia en marzo de 2026). Pide que muestre la cría y que diga cuándo trató la varroa. Evita colmenas usadas de origen desconocido.'],
+ ['Equípate','Colmena Dadant de 10 o 12 cuadros, traje, guantes, ahumador, palanca y cepillo. El extractor y la envasadora se pueden alquilar a cooperativas y asociaciones, lo que baja mucho la inversión.'],
+ ['Primer año: construir la familia','Revisa cada 7–10 días en primavera. Da espacio antes de que lo necesiten, controla la enjambrazón y no extraigas miel si la familia es débil. Deja siempre reservas para el invierno.'],
+ ['Sanidad: la varroa es el riesgo principal','Mide la caída de ácaros y trata según el calendario de abajo. Anota cada tratamiento en el registro dentro de las 48 horas y conserva recibos y recetas 5 años. Con más de 10 colmenas el registro lo sella la ASL.'],
+ ['Cosecha, envasado y venta','Extrae solo miel operculada. Para vender necesitas registrar el laboratorio y el punto de venta en la ASL (SCIA por el SUAP) y un plan HACCP; la venta directa de pequeñas cantidades tiene reglas propias de cada región. Empieza vendiendo a conocidos y en mercados locales.'],
+ ['Crecer con cabeza','Pasa de 4 a 8 o 10 colmenas el segundo año dividiendo tus propias familias. Más allá de 10 empiezas con obligaciones de actividad comercial; decide entonces si te conviene la partita IVA.']
 ];
-function calcPresu(n){
-  var lo=0,hi=0;
-  PRESUPUESTO.forEach(function(r,i){var unit=i<2||i>=3;var k=unit?n:1;lo+=r[1]*k;hi+=r[2]*k});
-  return[lo,hi];
+var PASOS_CO=[
+ ['Decide con los ojos abiertos','Calcula una o dos horas por visita al apiario, con más frecuencia en floración. En Colombia las abejas son africanizadas: más defensivas, así que la seguridad y la distancia a casas, animales y caminos importan desde el primer día. Empieza con 2 a 4 colmenas y trátalo como complemento al terreno.'],
+ ['Fórmate antes de comprar nada','La Ley 2193 de 2022 prevé capacitación del SENA y apoyo técnico de Agrosavia. Busca además a Fedeabejas y a apicultores de tu municipio, y acompaña una cosecha completa antes de comprar. Aprende a manejar el ahumador, a leer la cría y a trabajar con abejas defensivas.'],
+ ['Elige el sitio','Floración variada y continua en un radio de 2–3 km, agua cerca, sombra parcial, buen drenaje y colmenas elevadas del suelo por la humedad. Lejos de viviendas, de animales y de vías; la ley no fija distancias, así que decide con prudencia y con los vecinos. Revisa el POT/EOT del municipio por si restringe el uso del predio.'],
+ ['Registra el predio apícola ante el ICA','El ICA lleva el registro del predio y del apicultor. Debes dar identificación, vereda, municipio, extensión del predio, dirección de notificación, número de colmenas, especie y fin de la producción. El registro es sanitario: no reemplaza el título de propiedad. La Ley 2193 de 2022 obliga a registrar los apiarios. Pide el trámite exacto y los plazos en la oficina local del ICA.'],
+ ['Compra colmenas y colonias','Colmenas Langstroth completas (300.000–400.000 COP) y colonias con reina (200.000–300.000 COP), según la ficha de Banco Contactar. Compra a apicultores registrados y de confianza. No captures enjambres silvestres sin saber manejarlos.'],
+ ['Equípate','Overol blanco, careta, guantes de cuero, botas altas, ahumador y herramientas (unos 230.000 a 370.000 COP en total según la misma ficha), más insumos de 50.000 a 100.000 COP. Un extractor puede prestarse o alquilarse al inicio.'],
+ ['Primer año: construir la familia','Revisa cada 10–15 días, da espacio antes de que se llenen, controla hormigas y polilla de la cera, y alimenta en épocas de escasez. Anota fecha, estado de la reina, cría y reservas de cada colmena.'],
+ ['Sanidad','La guía del ICA PRA-SPA-G-014 explica bioseguridad y las seis enfermedades de declaración obligatoria. Notifica cualquier mortalidad extraña al ICA. Un estudio de 2020 encontró varroa presente en casi todos los apiarios de abejas africanizadas en Colombia, pero con infestación baja.'],
+ ['Cosecha, envasado y venta','Cosecha miel operculada, con baja humedad, y envásala en recipientes nuevos. El rótulo debe llevar el nombre científico de la especie y la leyenda de que no es recomendada para menores de un año. La Resolución 1057 de 2010 sobre la miel aparece marcada como nula: verifica la norma vigente del Ministerio de Salud y del Invima antes de vender.'],
+ ['Certificación y mercado','La Resolución 8390 de 2023 del ICA permite certificar las buenas prácticas apícolas, para predios ya registrados. Fedeabejas afirma que entre el 70% y el 80% de lo que se vende como miel no es genuino, lo que abre espacio para una miel trazable y certificada. También hay ingresos por polinización y por derivados (cera, propóleo, polen).']
+];
+var LEGAL_ES=[
+ ['Registro','Alta en la BDN: en la ASL (familiar o amateur) o por el SUAP (actividad comercial). Pregunta en la ASL de Viterbo o Roma 4 según donde estés.'],
+ ['Autoconsumo','Hasta 10 colmenas, sin actividad comercial.'],
+ ['Tratamientos','Registro obligatorio; sellado por la ASL si tienes más de 10 colmenas. Conserva 5 años recibos y recetas.'],
+ ['Vender miel','Laboratorio y punto de venta registrados en la ASL (SCIA por el SUAP) y plan HACCP.'],
+ ['Distancias','Referencia nacional de la L. 313/2004: 10 m de vías públicas y 5 m de linderos, o barrera de 2 m. Confírmalo con tu Comune.']
+];
+var LEGAL_CO=[
+ ['Ley 2193 de 2022','Obliga a registrar los apiarios y aplicar buenas prácticas apícolas. Multas de 10 a 100 salarios mínimos por adulterar o falsificar miel; cierre de 30 días la segunda vez.'],
+ ['Registro ICA','Registro del predio apícola o del apicultor, con fines sanitarios. Se tramita en la oficina local del ICA.'],
+ ['Buenas prácticas','Resolución 8390 de 2023 del ICA: certificación voluntaria para predios registrados.'],
+ ['Miel para consumo humano','La Resolución 1057 de 2010 (Minprotección) aparece nula; revisa la norma vigente. Exige sala de extracción separada de la vivienda, agua potable, registros de lote y rotulado con el nombre científico.'],
+ ['Distancias','La Ley 2193 no fija distancias entre colmenas y vecinos. Decide con prudencia por la defensividad de la abeja africanizada.']
+];
+var FUENTES_ES=[
+ ['Líneas guía varroatosis 2024 (Ministero della Salute, IZSVe)','https://izsvenezie.it/documenti/temi/api/normativa/ministero-salute/2024-04-02-nota-11687-linee-guida-varroatosi.pdf'],
+ ['FAQ apicultura, Regione Umbria','https://regione.umbria.it/documents/18/1248136/FAQ+APICOLTURA/7567445d-de84-4d14-b8a6-430a431a0436'],
+ ['Observatorio de precios, marzo de 2026','https://www.apicoltoremoderno.it/wp-content/uploads/2026/04/Rilevazione-marzo-2026.pdf'],
+ ['Cuánto cuesta empezar con la miel (Areasosta)','https://areasosta.com/faq/quanto-costa-iniziare-a-fare-il-miele']
+];
+var FUENTES_CO=[
+ ['Ley 2193 de 2022, apicultura en Colombia','https://www.dmsjuridica.com/buscador_20179478954/legislacion/leyes/2022/11/01/ley-2193-de-2022/?pdf=2330'],
+ ['Guía sanitaria apícola PRA-SPA-G-014 (ICA)','https://www.ica.gov.co/areas/pecuaria/servicios/enfermedades-animales/programa-apicola/guia-pra-spa-g-014-v-1.aspx'],
+ ['Registro de predios apícolas (Agronegocios)','https://www.agronegocios.co/agricultura/estos-son-los-requisitos-que-debe-tener-en-cuenta-para-el-registro-de-predios-apicolas-3473556'],
+ ['Certificación en buenas prácticas apícolas, Res. 8390 de 2023 (Agronegocios)','https://www.agronegocios.co/agricultura/ica-establecio-los-requisitos-para-obtener-la-certificacion-en-buenas-practicas-apicolas-3675324'],
+ ['Ficha de apicultura, Banco Contactar','https://bancocontactar.com/wp-content/uploads/2025/09/Ficha-Apicultura_web.pdf'],
+ ['Sector apícola en cifras (Portafolio, 2023)','https://www.portafolio.co/economia/finanzas/sector-agro-la-importancia-de-la-apicultura-fedeabejas-responde-577169'],
+ ['Resolución 1057 de 2010, miel de abejas (Invima, marcada nula)','https://normograma.invima.gov.co/compilacion/docs/resolucion_minproteccion_1057_2010.htm'],
+ ['Varroa en abejas africanizadas de Colombia (estudio 2020)','https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8136659/']
+];
+function apiD(){return S.lib.pais==='Colombia'?API_CO:API_ES}
+function calcPresu(D,n){
+  var lo=0,hi=0,out=[];
+  D.partidas.forEach(function(r){
+    if(n<r[2])return;
+    if(/lquilar|restar/.test(r[0])&&n>=10)return;
+    var k=r[1]==='col'?n:1;
+    lo+=r[3]*k;hi+=r[4]*k;out.push({d:r[0],lo:r[3]*k,hi:r[4]*k,t:r[5]});
+  });
+  return{lo:lo,hi:hi,rows:out};
+}
+function tagFuente(t){return t==='fuente'?'<span class="tag good">con fuente</span>':t==='parcial'?'<span class="tag">precio base con fuente</span>':'<span class="tag warn">estimación</span>'}
+function calcHtml(n,kg,p){
+  var D=apiD();n=Math.max(0,Math.round(n||0));kg=Math.max(0,kg||0);p=Math.max(0,p||0);
+  var b=calcPresu(D,n),ing=n*kg*p;
+  function m(x){return fmt(x)+' '+D.mon}
+  var rows=b.rows.map(function(r){return '<tr><td>'+esc(r.d)+' '+tagFuente(r.t)+'</td><td class="mono">'+fmt(r.lo)+' – '+fmt(r.hi)+' '+D.mon+'</td></tr>'}).join('');
+  var esc3=[4,20,50].map(function(k){var c=calcPresu(D,k);return '<tr><td>'+k+' colmenas</td><td class="mono">'+m(c.lo)+' – '+m(c.hi)+'</td><td class="mono">'+m(k*D.kg*D.precio)+'</td></tr>'}).join('');
+  return '<div class="tablewrap"><table class="cost">'+rows+'<tr class="tot"><td>Inversión del primer año ('+n+' colmenas)</td><td>'+m(b.lo)+' – '+m(b.hi)+'</td></tr></table></div>'+
+   '<p class="live-top"><span><b>Ingreso bruto por cosecha:</b> '+m(ing)+' ('+fmt(n*kg)+' kg × '+fmt(p)+' '+D.mon+'/kg). El primer año suele dar poca o nada de miel, así que recuperar la inversión puede tardar varios años.</span></p>'+
+   '<h3 class="sh">Tres escalas con los valores de partida</h3><div class="tablewrap"><table><thead><tr><th>Escala</th><th>Inversión inicial</th><th>Ingreso bruto por cosecha</th></tr></thead><tbody>'+esc3+'</tbody></table></div>';
 }
 function vBiblioteca(){
+  var D=apiD(),co=S.lib.pais==='Colombia',PASOS=co?PASOS_CO:PASOS_ES,LEG=co?LEGAL_CO:LEGAL_ES,FUE=co?FUENTES_CO:FUENTES_ES;
   var h='<div class="stack">';
-  h+='<section class="panel"><h2>Biblioteca de autosuficiencia</h2><p class="muted">Guías para producir tu propia comida y generar ingresos con la tierra. Cada guía trae pasos, calendario, costos y fuentes. Los datos de Italia sirven para el terreno en Lazio, Umbria y Abruzzo. Para Colombia habrá una versión propia más adelante.</p>'+
+  h+='<section class="panel"><h2>Biblioteca de autosuficiencia</h2><p class="muted">Guías para producir tu propia comida y generar ingresos con la tierra. Cada guía trae pasos, presupuesto, calendario y fuentes.</p>'+
    '<div class="chips"><button class="chip" aria-pressed="true">Apiario</button>'+['Hidroponía','Piscicultura','Gallinas','Cerdos','Vacas','Comparativa'].map(function(x){return '<button class="chip" disabled style="opacity:.55;cursor:not-allowed">'+x+' · próximamente</button>'}).join('')+'</div></section>';
-  h+='<section class="panel"><h2>Apiario: empezar como apicultor</h2>'+
-   '<dl class="figs"><div><dt>Inversión inicial</dt><dd>2.000–3.000 €</dd><span class="sub">con equipo completo</span></div><div><dt>Colmenas para empezar</dt><dd>2 a 8</dd><span class="sub">mejor 2 para comparar</span></div><div><dt>Miel por colmena</dt><dd>20–30 kg</dd><span class="sub">hasta 40–50 kg un buen año</span></div></dl>'+
-   '<p class="muted">Una hectárea sobra para un apiario. Las abejas necesitan buenas floraciones en un radio de 3 km más que superficie propia, y además polinizan tus cultivos: avellano no (se poliniza con viento), pero frutales, hortalizas y aromáticas sí.</p></section>';
-  // pasos
-  h+='<section class="panel"><h2>Paso a paso</h2><ol class="steps">'+
-   '<li><b>Formación.</b> Haz un curso de iniciación con una asociación de apicultores o acompaña a un apicultor local una temporada. Es opcional, pero ahorra los errores más caros.</li>'+
-   '<li><b>Registro en la ASL.</b> Un apicultor familiar o de autoconsumo se registra en la BDN (base de datos nacional) directamente en la ASL; si es actividad comercial, a través del SUAP del Comune. Hasta 10 colmenas cuenta como autoconsumo, y los enjambres cuentan en ese límite.</li>'+
-   '<li><b>Elige el sitio.</b> Sol de mañana, resguardo del viento, agua cercana, suelo seco y acceso para el coche. La ley nacional (L. 313/2004) pide unos 10 m de caminos públicos y 5 m de los linderos, o una barrera de 2 m. Confírmalo con tu Comune.</li>'+
-   '<li><b>Compra las familias.</b> Mejor enjambres o núcleos de 5 panales a un apicultor local (100–110 € en el centro de Italia en marzo de 2026), comprados en abril o mayo. Evita colmenas viejas sin historia sanitaria.</li>'+
-   '<li><b>Equipo básico.</b> Colmena (Dadant de 10 o 12 cuadros), traje, guantes, ahumador, palanca y cepillo. El extractor y la envasadora se pueden alquilar a cooperativas o asociaciones.</li>'+
-   '<li><b>Primer año.</b> Revisa cada 7–10 días en primavera, da espacio en tiempo, no tomes miel el primer año si la familia está débil y deja reservas para el invierno.</li>'+
-   '<li><b>Varroa.</b> Es el mayor riesgo. Mide la caída de ácaros, trata según el calendario de abajo y anota todo en el registro de tratamientos dentro de las 48 horas.</li>'+
-   '<li><b>Cosecha y venta.</b> Extrae solo miel operculada. Para vender necesitas registrar el laboratorio y el punto de venta ante la ASL y un plan HACCP; la venta directa de pequeñas cantidades tiene reglas propias de cada región.</li></ol></section>';
-  // calendario
-  h+='<section class="panel"><h2>Calendario del año</h2><p class="muted">Orientativo para el centro de Italia (Viterbo, Orte). Ajusta las fechas a tus floraciones.</p><div class="calwrap"><table class="cal"><thead><tr><th></th>'+MESES.map(function(m){return '<th>'+m+'</th>'}).join('')+'</tr></thead><tbody>'+
-   CAL_API.map(function(r){return '<tr><td title="'+esc(r[2])+'">'+esc(r[0])+'</td>'+r[1].map(function(v){return '<td><i class="c'+v+'"></i></td>'}).join('')+'</tr>'}).join('')+'</tbody></table></div>'+
-   '<ul class="legend"><li><i class="c1"></i> poco</li><li><i class="c2"></i> normal</li><li><i class="c3"></i> pico</li></ul>'+
-   '<p class="hint">'+CAL_API.map(function(r){return '<b>'+esc(r[0])+':</b> '+esc(r[2])}).join(' · ')+'</p></section>';
-  // varroa
-  h+='<section class="panel"><h2>Control de varroa</h2><p class="muted">Según las líneas guía italianas de 2024. Los productos tienen condiciones de temperatura y de uso: lee la etiqueta y habla con el veterinario de la ASL.</p><div class="tablewrap"><table><thead><tr><th>Momento</th><th>Intervención</th><th>Condición</th></tr></thead><tbody>'+
-   VARROA_TAB.map(function(r){return '<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td></tr>'}).join('')+'</tbody></table></div>'+
-   '<p class="hint">Umbral de otoño: tratar enseguida si caen más de 4 ácaros al día. Conserva 5 años los registros, recibos de compra y recetas. Con más de 10 colmenas el registro lo sella la ASL.</p></section>';
-  // presupuesto y calculadora
-  h+='<section class="panel"><h2>Presupuesto y retorno</h2><div class="calc"><label class="fld"><span>Colmenas</span><input type="text" inputmode="numeric" id="cal_n" value="4"></label><label class="fld"><span>Miel por colmena (kg)</span><input type="text" inputmode="numeric" id="cal_kg" value="20"></label><label class="fld"><span>Precio de venta (€ por kg)</span><input type="text" inputmode="decimal" id="cal_p" value="10"></label></div><div id="cal_out">'+calcHtml(4,20,10)+'</div>'+
-   '<p class="hint">El precio de 10 €/kg es un supuesto que debes ajustar: el mercado mayorista de marzo de 2026 no registró precios de miel, y la venta directa depende de tu zona y del tipo de miel. Las filas marcadas como estimación son mías y no vienen de una fuente.</p></section>';
-  // legal
-  h+='<section class="panel"><h2>Qué dice la ley</h2><ul class="rules"><li><b>Registro:</b> la BDN identifica al apicultor y su apiario. Pregunta en la ASL de tu zona (Viterbo o Roma 4 si vives en Orte o Bassano).</li><li><b>Autoconsumo:</b> hasta 10 colmenas, sin actividad comercial.</li><li><b>Registro de tratamientos:</b> obligatorio; sellado por la ASL si tienes más de 10 colmenas.</li><li><b>Vender miel:</b> laboratorio y punto de venta registrados en la ASL (SCIA vía SUAP) y plan HACCP.</li></ul><p class="hint">Resumen basado en la FAQ de apicultura de la Regione Umbria y en la normativa nacional. Las reglas exactas de Lazio pueden variar: confirma con la ASL y el SUAP de tu Comune. No es asesoría legal.</p></section>';
-  h+='<section class="panel"><h2>Fuentes</h2><ul class="rules"><li><a href="https://izsvenezie.it/documenti/temi/api/normativa/ministero-salute/2024-04-02-nota-11687-linee-guida-varroatosi.pdf" target="_blank" rel="noopener">Líneas guía varroatosis 2024 (Ministero della Salute, IZSVe)</a></li><li><a href="https://regione.umbria.it/documents/18/1248136/FAQ+APICOLTURA/7567445d-de84-4d14-b8a6-430a431a0436" target="_blank" rel="noopener">FAQ apicultura, Regione Umbria</a></li><li><a href="https://www.apicoltoremoderno.it/wp-content/uploads/2026/04/Rilevazione-marzo-2026.pdf" target="_blank" rel="noopener">Observatorio de precios, marzo de 2026 (enjambres)</a></li><li><a href="https://areasosta.com/faq/quanto-costa-iniziare-a-fare-il-miele" target="_blank" rel="noopener">Cuánto cuesta empezar con la miel (Areasosta)</a></li></ul></section>';
+  h+='<section class="panel"><h2>Apiario: de cero a la primera cosecha</h2><div class="chips"><button class="chip" data-act="libpais" data-v="Italia" aria-pressed="'+(!co)+'">Italia</button><button class="chip" data-act="libpais" data-v="Colombia" aria-pressed="'+co+'">Colombia</button></div>'+
+   '<dl class="figs"><div><dt>Colmenas para empezar</dt><dd>2 a 4</dd><span class="sub">hasta 8 con experiencia</span></div><div><dt>Miel por colmena</dt><dd>'+(co?'~40 kg':'20–30 kg')+'</dd><span class="sub">'+(co?'según datos de Antioquia':'hasta 40–50 kg un buen año')+'</span></div><div><dt>Inversión (4 colmenas)</dt><dd>'+(function(){var c=calcPresu(D,4);return fmt(c.lo)+'–'+fmt(c.hi)+' '+D.mon})()+'</dd></div></dl>'+
+   '<p class="muted">'+(co?'Colombia no tiene invierno: las abejas están activas todo el año y la cosecha depende de las floraciones y de las lluvias de tu zona. La abeja africanizada rinde bien pero es defensiva. Fedeabejas calcula que la miel nacional cubre entre el 20% y el 30% de la demanda.':'Una hectárea sobra para un apiario: las abejas buscan néctar en un radio de unos 3 km, y además polinizan frutales, hortalizas y aromáticas de tu terreno. El avellano no, porque se poliniza con el viento.')+'</p></section>';
+  h+='<section class="panel"><h2>Paso a paso</h2><ol class="steps">'+PASOS.map(function(x){return '<li><b>'+esc(x[0])+'.</b> '+esc(x[1])+'</li>'}).join('')+'</ol></section>';
+  if(!co){
+    h+='<section class="panel"><h2>Calendario del año</h2><p class="muted">Orientativo para el centro de Italia (Viterbo, Orte). Ajusta las fechas a tus floraciones.</p><div class="calwrap"><table class="cal"><thead><tr><th></th>'+MESES.map(function(m){return '<th>'+m+'</th>'}).join('')+'</tr></thead><tbody>'+
+     CAL_API.map(function(r){return '<tr><td title="'+esc(r[2])+'">'+esc(r[0])+'</td>'+r[1].map(function(v){return '<td><i class="c'+v+'"></i></td>'}).join('')+'</tr>'}).join('')+'</tbody></table></div>'+
+     '<ul class="legend"><li><i class="c1"></i> poco</li><li><i class="c2"></i> normal</li><li><i class="c3"></i> pico</li></ul>'+
+     '<p class="hint">'+CAL_API.map(function(r){return '<b>'+esc(r[0])+':</b> '+esc(r[2])}).join(' · ')+'</p></section>';
+    h+='<section class="panel"><h2>Control de varroa</h2><p class="muted">Según las líneas guía italianas de 2024. Los productos tienen condiciones de temperatura y de uso: lee la etiqueta y habla con el veterinario de la ASL.</p><div class="tablewrap"><table><thead><tr><th>Momento</th><th>Intervención</th><th>Condición</th></tr></thead><tbody>'+
+     VARROA_TAB.map(function(r){return '<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td></tr>'}).join('')+'</tbody></table></div>'+
+     '<p class="hint">Umbral de otoño: tratar enseguida si caen más de 4 ácaros al día.</p></section>';
+  }else{
+    h+='<section class="panel"><h2>El año en Colombia</h2><ul class="rules"><li><b>Sin estaciones de invierno:</b> las colmenas trabajan todo el año. El ritmo lo marcan las lluvias y las floraciones de tu zona y piso térmico.</li><li><b>Mira tu entorno:</b> anota durante un año qué florece y cuándo en un radio de 2–3 km. Con ese calendario sabrás cuándo poner alzas, cosechar y alimentar.</li><li><b>Épocas de escasez:</b> si hay pocas flores o muchas lluvias seguidas, alimenta con jarabe para evitar que la colonia se debilite o abandone la colmena.</li><li><b>Sanidad:</b> revisa a menudo hormigas, polilla de la cera y cría enferma. Notifica al ICA cualquier mortalidad inusual.</li></ul><p class="hint">No encontré un calendario por mes con fuente para Colombia, así que no lo invento. Pregunta a apicultores de tu municipio por sus cosechas, que varían mucho entre zonas.</p></section>';
+  }
+  h+='<section class="panel"><h2>Presupuesto y retorno ('+(co?'Colombia, en COP':'Italia, en euros')+')</h2><div class="calc"><label class="fld"><span>Colmenas</span><input type="text" inputmode="numeric" id="cal_n" value="4"></label><label class="fld"><span>Miel por colmena (kg)</span><input type="text" inputmode="numeric" id="cal_kg" value="'+D.kg+'"></label><label class="fld"><span>Precio de venta ('+D.mon+' por kg)</span><input type="text" inputmode="decimal" id="cal_p" value="'+D.precio+'"></label></div><div id="cal_out">'+calcHtml(4,D.kg,D.precio)+'</div>'+
+   '<p class="hint">'+esc(D.kgNota)+' '+esc(D.precioNota)+' Las partidas marcadas como estimación son mías y no vienen de una fuente.</p></section>';
+  h+='<section class="panel"><h2>Qué dice la ley</h2><ul class="rules">'+LEG.map(function(x){return '<li><b>'+esc(x[0])+':</b> '+esc(x[1])}).join('</li>')+'</li></ul><p class="hint">Resumen de las fuentes citadas, sin valor de asesoría legal. Confirma los trámites con '+(co?'la oficina local del ICA y la alcaldía de tu municipio':'la ASL y el SUAP de tu Comune')+'.</p></section>';
+  h+='<section class="panel"><h2>Errores comunes de quien empieza</h2><ul class="rules"><li>Comprar demasiadas colmenas el primer año y no poder atenderlas.</li><li>No dejar reservas de miel y dejar morir de hambre a la familia.</li><li>Retrasar el control sanitario o no llevar registros.</li><li>Abrir la colmena con mal tiempo o sin ahumador y sin protección.</li><li>Poner el apiario donde no hay agua ni floración en un radio razonable.</li></ul></section>';
+  h+='<section class="panel"><h2>Fuentes</h2><ul class="rules">'+FUE.map(function(f){return '<li><a href="'+f[1]+'" target="_blank" rel="noopener">'+esc(f[0])+'</a></li>'}).join('')+'</ul></section>';
   return h+'</div>';
-}
-function calcHtml(n,kg,p){
-  n=Math.max(0,Math.round(n||0));kg=Math.max(0,kg||0);p=Math.max(0,p||0);
-  var b=calcPresu(n),ing=n*kg*p;
-  var rows=PRESUPUESTO.map(function(r,i){var unit=i<2||i>=3,k=unit?n:1;return '<tr><td>'+esc(r[0])+(r[3]==='est'?' <span class="tag warn">estimación</span>':' <span class="tag good">con fuente</span>')+'</td><td class="mono">'+fmt(r[1]*k)+' – '+fmt(r[2]*k)+' €</td></tr>'}).join('');
-  return '<div class="tablewrap"><table class="cost">'+rows+'<tr class="tot"><td>Inversión del primer año ('+n+' colmenas)</td><td>'+fmt(b[0])+' – '+fmt(b[1])+' €</td></tr></table></div>'+
-   '<p class="live-top"><span><b>Ingreso bruto por cosecha:</b> '+fmt(ing)+' € ('+fmt(n*kg)+' kg × '+String(p).replace('.',',')+' €/kg). El primer año suele dar poca o nada de miel, así que recuperar la inversión puede tardar varios años.</span></p>';
 }
 /* ---------- Vistas ---------- */
 function visibles(){
@@ -801,6 +886,7 @@ document.addEventListener('click',function(e){
   if(e.target.closest('[data-stop]')&&el.dataset.act==='abrir'&&el.tagName==='ARTICLE')return;
   var a=el.dataset.act,id=el.dataset.id;
   if(a==='cmp')return;
+  if(a==='libpais'){S.lib.pais=el.dataset.v;render();return}
   if(a==='salir'){logout();return}
   if(a==='abrir'){openDrawer({type:'terreno',id:id});return}
   if(a==='cerrar'){closeDrawer();return}
