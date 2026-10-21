@@ -296,6 +296,7 @@ var TFIELDS=[
  {g:'Anuncio',f:[
   {k:'nombre',l:'Nombre o referencia',t:'text',full:1},
   {k:'url',l:'Enlace del anuncio',t:'text',full:1},
+  {k:'ubicacion',l:'Ubicación exacta (enlace de Google Maps o coordenadas)',t:'text',full:1},
   {k:'fuente',l:'Portal',t:'sel',o:OPT.fuente,def:'Otro'},
   {k:'estado',l:'Estado',t:'sel',o:ESTADOS,def:'por_revisar'},
   {k:'fecha_anuncio',l:'Fecha del anuncio',t:'text'}]},
@@ -1189,12 +1190,32 @@ var GEO={
  'venecia':[5.965,-75.736],'andes':[5.656,-75.879],'jardín':[5.598,-75.819],'santa rosa de osos':[6.644,-75.462],
  'yarumal':[6.964,-75.421],'támesis':[5.664,-75.715]
 };
+
+function parseCoords(str){
+  if(!str)return null;str=String(str);var m;
+  try{str=decodeURIComponent(str)}catch(e){}
+  m=str.match(/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/)||str.match(/!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/)||str.match(/[?&](?:q|ll|query|destination)=(-?\d{1,3}\.\d+)[, ]\s*(-?\d{1,3}\.\d+)/)||str.match(/^\s*(-?\d{1,3}\.\d+)\s*[,; ]\s*(-?\d{1,3}\.\d+)\s*$/);
+  if(!m)return null;var la=parseFloat(m[1]),lo=parseFloat(m[2]);
+  return Math.abs(la)<=90&&Math.abs(lo)<=180?[la,lo]:null;
+}
+function coordsOf(t){return parseCoords(t.ubicacion)}
+function gmapsUrl(t){
+  var c=coordsOf(t);
+  if(c)return 'https://www.google.com/maps/search/?api=1&query='+c[0]+','+c[1];
+  var q=[t.comune,t.provincia,t.pais||'Italia'].filter(Boolean).join(', ');
+  return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q||t.nombre||'');
+}
+function mapsHtml(t){
+  var c=coordsOf(t),u=String(t.ubicacion||'').trim();
+  return '<h2>Ubicación</h2><p class="muted">'+(c?'Ubicación exacta guardada ('+c[0].toFixed(5)+', '+c[1].toFixed(5)+'). Aparece como pin en la pestaña Mapa.':(u?'No pude leer coordenadas en lo que pegaste. Pega el enlace largo de Google Maps o las coordenadas (por ejemplo 42.4600, 12.3830). Los enlaces cortos (maps.app.goo.gl) no se pueden leer.':'Sin ubicación exacta: el mapa usa el centro del comune. Para fijarla, abre el lugar en Google Maps, copia las coordenadas o el enlace y pégalos en el campo «Ubicación exacta».'))+'</p><p><a class="btn" href="'+esc(gmapsUrl(t))+'" target="_blank" rel="noopener">Abrir en Google Maps ↗</a></p>';
+}
 function geoOf(t){var c=String(t.comune||'').split(' / ')[0].trim().toLowerCase();return GEO[c]||null}
 function vMapa(){
   var list=visibles(),by={},sin=[];
-  list.forEach(function(t){var g=geoOf(t);if(!g){sin.push(t);return}var k=String(t.comune).split(' / ')[0].trim();(by[k]=by[k]||{g:g,t:[]}).t.push(t)});
-  S.mapData=by;
-  return '<section class="panel"><h2>Mapa de terrenos</h2><p class="muted">Cada círculo es un comune o municipio. El tamaño indica cuántos terrenos hay y el color, la mejor puntuación: verde desde 70, ámbar desde 50, gris por debajo o sin datos. Respeta los filtros de la pestaña Terrenos. Toca un círculo para ver los terrenos.</p>'+
+  var exact=[];
+  list.forEach(function(t){if(coordsOf(t)){exact.push(t);return}var g=geoOf(t);if(!g){sin.push(t);return}var k=String(t.comune).split(' / ')[0].trim();(by[k]=by[k]||{g:g,t:[]}).t.push(t)});
+  S.mapData=by;S.mapExact=exact;
+  return '<section class="panel"><h2>Mapa de terrenos</h2><p class="muted">Cada círculo es un comune o municipio. El tamaño indica cuántos terrenos hay y el color, la mejor puntuación: verde desde 70, ámbar desde 50, gris por debajo o sin datos. Respeta los filtros de la pestaña Terrenos. Los puntos pequeños con borde blanco son terrenos con ubicación exacta. Toca un círculo o un punto para ver los terrenos, y usa el selector de capas (arriba a la derecha) para ver la imagen de satélite.</p>'+
    '<div id="map" style="height:68vh;min-height:360px;border-radius:12px;border:1px solid var(--line)"></div>'+
    '<p class="hint">Las ubicaciones son aproximadas al centro del comune o municipio (error de unos 5 km) y no marcan la parcela exacta. '+(sin.length?sin.length+' terrenos no se muestran porque no tengo coordenadas de su comune ('+Array.from(new Set(sin.map(function(t){return t.comune||'sin comune'}))).map(esc).join(', ')+').':'')+'</p></section>';
 }
@@ -1203,7 +1224,9 @@ function mapInit(){
   if(typeof L==='undefined'){el.innerHTML='<p class="muted" style="padding:16px">No se pudo cargar el mapa. Revisa tu conexión e inténtalo de nuevo.</p>';return}
   if(S.map){try{S.map.remove()}catch(e){}S.map=null}
   var m=L.map(el,{scrollWheelZoom:false}).setView([42.35,12.2],8);S.map=m;
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(m);
+  var osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(m);
+  var sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,attribution:'Imágenes © Esri'});
+  L.control.layers({'Mapa':osm,'Satélite':sat}).addTo(m);
   var pts=[];
   Object.keys(S.mapData||{}).forEach(function(k){
     var d=S.mapData[k],best=null;
@@ -1215,6 +1238,12 @@ function mapInit(){
     var html='<b>'+esc(k)+'</b> · '+d.t.length+' terreno'+(d.t.length>1?'s':'')+'<br><span style="font-size:12px">'+esc(rng)+'</span><div style="margin-top:6px">'+top.map(function(t){var sc=score(t).pct;return '<div style="margin:3px 0"><a role="button" tabindex="0" style="cursor:pointer;text-decoration:underline" data-act="abrir" data-id="'+esc(t.id)+'">'+esc(t.nombre||t.id)+'</a> <span style="font-size:12px">'+(sc!=null?sc+'/100':'')+' · '+esc(money(t,t.precio))+'</span></div>'}).join('')+(d.t.length>6?'<div style="font-size:12px">y '+(d.t.length-6)+' más</div>':'')+'</div>';
     L.circleMarker(d.g,{radius:Math.min(26,8+Math.sqrt(d.t.length)*4),color:col,fillColor:col,fillOpacity:.55,weight:2}).addTo(m).bindPopup(html);
     pts.push(d.g);
+  });
+  (S.mapExact||[]).forEach(function(t){
+    var c=coordsOf(t),sc=score(t).pct,col=sc==null?'#8a8f98':sc>=70?'#2e8b57':sc>=50?'#d99a1e':'#8a8f98';
+    var html='<b>'+esc(t.nombre||t.id)+'</b><br><span style="font-size:12px">'+esc(t.comune||'')+' · '+esc(money(t,t.precio))+(sc!=null?' · '+sc+'/100':'')+'</span><div style="margin-top:6px"><a role="button" tabindex="0" style="cursor:pointer;text-decoration:underline" data-act="abrir" data-id="'+esc(t.id)+'">Abrir ficha</a> · <a href="'+esc(gmapsUrl(t))+'" target="_blank" rel="noopener">Google Maps ↗</a></div>';
+    L.circleMarker(c,{radius:7,color:'#ffffff',weight:2,fillColor:col,fillOpacity:1}).addTo(m).bindPopup(html);
+    pts.push(c);
   });
   if(pts.length>1){var it=pts.filter(function(g){return g[0]>30}),co=pts.filter(function(g){return g[0]<30});m.fitBounds(L.latLngBounds(it.length?it:co),{padding:[30,30]})}
   else if(pts.length===1)m.setView(pts[0],11);
@@ -1305,7 +1334,7 @@ function vTerrenos(){
       '<div><dt>€ por ha</dt><dd>'+(p!=null?fmt(p):'—')+'</dd></div></dl>'+
       '<div class="tags">'+tagsFor(t)+'</div>'+
       (t.altitud!=null&&!isNaN(t.altitud)?'<p class="cropline"><b>Van bien a '+fmt(t.altitud)+' m:</b> '+esc(cropsFor(Number(t.altitud),t.pais).opt.slice(0,5).map(function(x){return x.n.split(' (')[0]}).join(', ')||'ninguno de la lista')+'</p>':'')+
-      '<div class="card-foot"><span class="pill '+est+'">'+ESTADOS[est]+'</span>'+(t.url?'<a href="'+esc(t.url)+'" target="_blank" rel="noopener" data-stop="1">Ver anuncio ↗</a>':'')+'</div></article>';
+      '<div class="card-foot"><span class="pill '+est+'">'+ESTADOS[est]+'</span>'+(t.url?'<a href="'+esc(t.url)+'" target="_blank" rel="noopener" data-stop="1">Ver anuncio ↗</a> ':'')+'<a href="'+esc(gmapsUrl(t))+'" target="_blank" rel="noopener" data-stop="1">Google Maps ↗</a></div></article>';
   }).join('')+'</div>';
   return h;
 }
@@ -1469,6 +1498,7 @@ function drawDrawer(){
   if(d.type==='terreno'){
     var t=d.id?(S.terrenos.filter(function(x){return x.id===d.id})[0]||{}):(d.prefill||{});
     var body='<section class="panel" id="live">'+liveHtml(t)+'</section>'+
+      '<section class="panel" id="mapsp">'+mapsHtml(t)+'</section>'+
       '<section class="panel" id="altp">'+altHtml(t.altitud,t.pais)+(altAviso(t)?'<p class="warnline">'+esc(altAviso(t))+'</p>':'')+'</section>'+formHtml(TFIELDS,t)+
       '<section class="panel"'+(t.pais==='Colombia'?' hidden':'')+' id="costp"><h2>Coste de compra como particular</h2><div id="cost">'+costHtml(t.precio)+'</div><label class="chk" style="margin-top:8px"><span style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="agencia" checked> Incluir comisión de agencia</span></label><p class="hint">Estimación. El notaio confirma las cifras finales.</p></section>';
     if(d.id){var ck=t.checks||{},LIST=t.pais==='Colombia'?CHECK_CO:CHECK;body+='<section class="panel"><h2>Checklist legal'+(t.pais==='Colombia'?' (Colombia)':'')+'</h2><div class="chk">'+LIST.map(function(c){return '<label><input type="checkbox" data-act="chk" data-k="'+c[0]+'"'+(ck[c[0]]?' checked':'')+'> <span>'+esc(c[1])+'</span></label>'}).join('')+'</div></section>'}
@@ -1490,6 +1520,7 @@ function liveUpdate(){
   var d=S.drawer;if(!d||d.type!=='terreno'||!$('live'))return;
   var t=collect(TFIELDS);$('live').innerHTML=liveHtml(t);$('cost').innerHTML=costHtml(t.precio);
   if($('costp'))$('costp').hidden=(t.pais==='Colombia');
+  if($('mapsp'))$('mapsp').innerHTML=mapsHtml(t);
   if($('altp'))$('altp').innerHTML=altHtml(t.altitud,t.pais)+(altAviso(t)?'<p class="warnline">'+esc(altAviso(t))+'</p>':'');
 }
 async function guardarTerreno(){
