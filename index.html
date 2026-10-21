@@ -432,6 +432,7 @@ var S={view:'terrenos',lib:{pais:'Italia'},terrenos:[],zonas:[],pesos:null,db:nu
   f:{q:'',estado:'',zona:'',edif:'',alt:'',pais:'',pmax:'',orden:'score'},compare:[],drawer:null};
 try{var cs=JSON.parse(localStorage.getItem('ct_compare')||'[]');if(Array.isArray(cs))S.compare=cs.slice(0,4)}catch(e){}
 var Q={};
+try{var fx0=parseFloat(localStorage.getItem('ct_fx'));if(fx0>0)S.lib.fx=fx0}catch(e){}
 function enqueue(key,fn){var p=(Q[key]||Promise.resolve()).then(fn);Q[key]=p.catch(function(){});return p}
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
@@ -1085,16 +1086,88 @@ function vHidro(){
   h+='<section class="panel"><h2>Fuentes</h2><ul class="rules">'+HID_FUENTES.map(function(f){return '<li><a href="'+f[1]+'" target="_blank" rel="noopener">'+esc(f[0])+'</a></li>'}).join('')+'</ul></section>';
   return h;
 }
+
+/* ---------- Comparativa y cambio euro-peso ---------- */
+var FX_HIST=[['1 ene',4432],['31 ene',4359],['30 abr',4292],['31 jul',3644],['20 oct',3563]];
+var CMP_TXT=[
+ ['Apiario','BDN en la ASL o el SUAP; hasta 10 colmenas es autoconsumo.','Registro ICA del apicultor y del predio; Ley 2193 de 2022.','Poca miel el primer año; la cosecha seria llega en la segunda temporada.','Media'],
+ ['Gallinas','Registro familiar en la ASL hasta 50 aves; para vender, consulta a la ASL.','Umbral ICA de granja biosegura: 200 aves; menos, consulta al ICA.','Las pollastre empiezan a poner en pocos meses.','Baja'],
+ ['Cerdos','Máximo 4 cerdos de engorde, solo autoconsumo; peste porcina africana.','Inscripción ICA con certificación de 2 años si vendes.','Un ciclo de engorde de varios meses.','Media'],
+ ['Vacas','Familiar: máximo 3 bovinos (ejemplo de la ASL de Chieti), solo autoconsumo.','Registro sanitario del predio y vacunación obligatoria.','Ciclo de más de un año.','Media'],
+ ['Piscicultura','Autorización regional y registro de la ASL (D.Lgs. 148/2008) y concesión de agua.','Permiso de cultivo de la AUNAP, registro ICA y concesión de aguas.','Un ciclo por año.','Alta'],
+ ['Hidroponía','Una serra desmontable es edilizia libera; la fija pide permesso.','BPA del ICA, a solicitud del productor.','Lechuga en 45 a 60 días desde el trasplante.','Media-alta']
+];
+function fxNow(){var v=S.lib.fx;return v>0?v:3563}
+function cmpSum(arr,n){var lo=0,hi=0;arr.forEach(function(r){if(n<r[2])return;var k=r[1]==='ave'||r[1]==='planta'?n:1;lo+=r[3]*k;hi+=r[4]*k});return{lo:lo,hi:hi}}
+function cmpNum(){
+  var rows=[];
+  [['Apiario',API_ES,API_CO],['Gallinas',GAL_ES,GAL_CO],['Cerdos',CER_ES,CER_CO],['Vacas',VAC_ES,VAC_CO],['Piscicultura',PEZ_ES,PEZ_CO],['Hidroponía',HID_ES,HID_CO]].forEach(function(g){
+    var r={n:g[0],c:[]};
+    [g[1],g[2]].forEach(function(D){
+      var inv,net,nota;
+      if(g[0]==='Apiario'){var c=calcPresu(D,4);inv=(c.lo+c.hi)/2;net=4*D.kg*D.precio;nota='Ingreso bruto con 4 colmenas; no incluye gastos corrientes'}
+      else if(g[0]==='Gallinas'){var a=cmpSum(D.partidas,15);inv=(a.lo+a.hi)/2;net=15*D.huevos*D.precio-15*0.12*365*D.pienso;nota='15 gallinas, menos el pienso'}
+      else if(g[0]==='Cerdos'){var b=cmpSum(D.partidas,1);inv=(b.lo+b.hi)/2;net=D.n*D.kg*D.precio-D.n*D.lechon-D.n*Math.max(0,D.kg-25)*3*D.pienso;nota=D.n+' cerdos, un ciclo al año'}
+      else if(g[0]==='Vacas'){var v=cmpSum(D.partidas,1);inv=(v.lo+v.hi)/2;net=(D.n*D.kgv*D.pv-D.n*D.kgc*D.pc-D.n*D.meses*D.alim)*12/D.meses;nota=D.n+' animales, ciclo de '+D.meses+' meses'}
+      else if(g[0]==='Piscicultura'){var z=cmpSum(D.partidas,1);inv=(z.lo+z.hi)/2;var kg=D.n*D.sup/100*D.g/1000;net=kg*D.precio-D.n*D.alev-kg*D.fcr*D.pienso;nota=D.n+' alevines, un ciclo al año'}
+      else{var n=D.n,h=0,l=0;D.partidas.forEach(function(q){if(n<q[2])return;if(n>=1000&&/^Cubierta/.test(q[0]))return;var k=q[1]==='planta'?n:1;l+=q[3]*k;h+=q[4]*k});inv=(l+h)/2;net=n*D.c*D.p-n*D.c*D.nut-D.elec*12;nota=n+' plantas de lechuga, '+D.c+' ciclos'}
+      r.c.push({inv:inv,net:net,nota:nota,mon:D.mon});
+    });
+    rows.push(r);
+  });
+  return rows;
+}
+function cmpBody(){
+  var fx=fxNow(),rows=cmpNum();
+  function eu(c,x){return c.mon==='COP'?x/fx:x}
+  function e0(x){return fmt(Math.round(x))+' €'}
+  var h='<div class="tablewrap"><table><thead><tr><th>Actividad</th><th>Italia: inversión</th><th>Italia: margen/año</th><th>Colombia: inversión</th><th>Colombia: margen/año</th><th>Retorno (años)</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    var it=r.c[0],co=r.c[1],ii=eu(it,it.inv),in_=eu(it,it.net),ci=eu(co,co.inv),cn=eu(co,co.net);
+    var ri=in_>0?ii/in_:null,rc=cn>0?ci/cn:null;
+    function f(x){return x==null?'no recupera':(Math.round(x*10)/10).toString().replace('.',',')}
+    var win=ri==null&&rc==null?'ninguno':ri==null?'Colombia':rc==null?'Italia':ri<=rc?'Italia':'Colombia';
+    h+='<tr><td><b>'+esc(r.n)+'</b></td><td class="mono">'+e0(ii)+'</td><td class="mono">'+e0(in_)+'</td><td class="mono">'+e0(ci)+'</td><td class="mono">'+e0(cn)+'</td><td>Italia '+f(ri)+' · Colombia '+f(rc)+'</td></tr>';
+  });
+  h+='</tbody></table></div><p class="hint">Todo en euros. Los pesos se convierten al cambio de arriba ('+fmt(fx)+' COP por euro). Inversión = punto medio del rango de la guía. Margen = ingreso menos gastos corrientes que modela cada guía (el apiario solo muestra el ingreso bruto). Salen de mis estimaciones de precios, no de datos de mercado: sirven para ver la lógica, no para decidir.</p>';
+  // tierra
+  var it=S.terrenos.filter(function(t){return t.pais!=='Colombia'&&ppha(t)!=null}).map(ppha).sort(function(a,b){return a-b});
+  var med=it.length?it[Math.floor(it.length/2)]:null;
+  var cz=S.zonas.filter(function(z){return z.moneda==='COP'&&z.ref_min!=null&&z.ref_max!=null});
+  var lo=cz.length?Math.min.apply(null,cz.map(function(z){return z.ref_min})):null,hi=cz.length?Math.max.apply(null,cz.map(function(z){return z.ref_max})):null;
+  h+='<h3 class="sh">Terreno por hectárea</h3><ul class="rules">'+
+   '<li><b>Italia:</b> '+(med?'la mediana de tus '+it.length+' terrenos cargados es de '+e0(med)+' por hectárea.':'sin datos.')+'</li>'+
+   '<li><b>Antioquia:</b> '+(lo!=null?'el mapa de la UPRA (2017) da de '+fmt(Math.round(lo/1e6))+' a '+fmt(Math.round(hi/1e6))+' millones de COP por hectárea, que son de '+e0(lo/fx)+' a '+e0(hi/fx)+' por hectárea al cambio actual. Son datos viejos y todavía no he cargado anuncios reales.':'sin datos.')+'</li></ul>';
+  var B=parseNum(($('cmp_b')||{}).value);if(!(B>0))B=50000;
+  var sc=[3000,fx,4000,4432];
+  h+='<h3 class="sh">Qué compran '+e0(B)+' en Colombia según el cambio</h3><div class="tablewrap"><table><thead><tr><th>Cambio (COP por €)</th><th>Pesos</th><th>Hectáreas en Antioquia</th></tr></thead><tbody>'+
+   sc.map(function(x,i){var cop=B*x;return '<tr><td class="mono">'+fmt(Math.round(x))+(i===1?' <span class="tag">hoy</span>':i===3?' <span class="tag">1 ene</span>':'')+'</td><td class="mono">'+fmt(Math.round(cop/1e6))+' millones</td><td class="mono">'+(lo!=null?fmt(Math.round(cop/hi*10)/10).replace('.',',')+' a '+fmt(Math.round(cop/lo*10)/10).replace('.',','):'—')+'</td></tr>'}).join('')+'</tbody></table></div>'+
+   '<p class="hint">'+(med?'En Italia, a la mediana de tus terrenos, el mismo dinero compraría unas '+(Math.round(B/med*10)/10).toString().replace('.',',')+' hectáreas.':'')+' Las hectáreas de Antioquia salen del rango de precios de la UPRA entre las zonas cargadas.</p>';
+  return h;
+}
+function vComparativa(){
+  var fx=fxNow();
+  var h='<section class="panel"><h2>Cambio euro–peso colombiano</h2><div class="calc"><label class="fld"><span>Cambio: COP por 1 €</span><input type="text" inputmode="decimal" id="cmp_fx" value="'+fx+'"></label><label class="fld"><span>Presupuesto de ejemplo (€)</span><input type="text" inputmode="numeric" id="cmp_b" value="50000"></label></div>'+
+   '<div class="chart">'+FX_HIST.map(function(r){var M=4600;return '<div class="arow"><b>'+r[0]+' 2026</b><div class="atrack"><i class="opt" style="left:0;width:'+r[1]/M*100+'%"></i></div><span class="mono">'+fmt(r[1])+'</span></div>'}).join('')+'</div>'+
+   '<p class="muted">En enero 1 € compraba unos 4.432 pesos; al 20 de octubre, unos 3.563. Es una caída de cerca del 20 %: el euro vale menos pesos que a principio de año. Fuente: dineroeneltiempo.com (cierres) y Dow Jones vía Infobae; las dos difieren en unos pocos pesos.</p>'+
+   '<ul class="rules"><li><b>Si mandas euros a Colombia</b> (comprar terreno, pagar una obra): conviene que el euro valga muchos pesos. Hoy rinde cerca de un 20 % menos que en enero.</li><li><b>Si vendes en Colombia y traes el dinero a Italia:</b> conviene lo contrario. Con el peso más fuerte, cada millón de COP te da más euros.</li><li><b>No puedo predecir el cambio.</b> Nadie lo hace de forma fiable. Una forma de repartir el riesgo es convertir por partes en vez de todo de una vez.</li></ul></section>';
+  h+='<section class="panel"><h2>Comparativa de las guías: Italia y Colombia en euros</h2><p class="warnline">Ejercicio con precios que supuse yo. Los precios de Colombia no están calibrados con datos de mercado, así que no uses esta tabla para decidir dónde invertir. Úsala para ver cómo cambia el resultado al mover el cambio y los precios en cada guía.</p><div id="cmp_out">'+cmpBody()+'</div></section>';
+  h+='<section class="panel"><h2>Trámites, plazos y dificultad</h2><div class="tablewrap"><table><thead><tr><th>Actividad</th><th>Italia</th><th>Colombia</th><th>Primeros ingresos</th><th>Dificultad</th></tr></thead><tbody>'+CMP_TXT.map(function(r){return '<tr><td><b>'+esc(r[0])+'</b></td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td>'+esc(r[3])+'</td><td>'+esc(r[4])+'</td></tr>'}).join('')+'</tbody></table></div><p class="hint">Los trámites vienen de cada guía y sus fuentes. Los tiempos hasta los primeros ingresos y la dificultad son criterio mío.</p></section>';
+  h+='<section class="panel"><h2>Qué falta para comparar de verdad</h2><ul class="rules"><li>Precios reales de terrenos en Antioquia: dependen del navegador.</li><li>Precios de venta locales de cada producto en tu zona de Italia y de Antioquia.</li><li>Costo de mano de obra, impuestos y transporte en cada país.</li><li>Una comparación de tus ingresos y gastos en Italia con los de Colombia, si quieres incluirlos.</li></ul></section>';
+  h+='<section class="panel"><h2>Fuentes</h2><ul class="rules"><li><a href="https://www.dineroeneltiempo.com/divisas/eur-cop/historico/2026" target="_blank" rel="noopener">Euro en Colombia 2026, histórico</a></li><li><a href="https://www.infobae.com/colombia/2026/10/20/euro-hoy-en-colombia-cotizacion-de-cierre-del-20-de-octubre/" target="_blank" rel="noopener">Euro hoy en Colombia, cierre del 20 de octubre (Infobae)</a></li></ul></section>';
+  return h;
+}
 function vBiblioteca(){
   var D=apiD(),co=S.lib.pais==='Colombia',PASOS=co?PASOS_CO:PASOS_ES,LEG=co?LEGAL_CO:LEGAL_ES,FUE=co?FUENTES_CO:FUENTES_ES;
   var h='<div class="stack">';
   h+='<section class="panel"><h2>Biblioteca de autosuficiencia</h2><p class="muted">Guías para producir tu propia comida y generar ingresos con la tierra. Cada guía trae pasos, presupuesto, calendario y fuentes.</p>'+
-   '<div class="chips"><button class="chip" data-act="libguia" data-v="apiario" aria-pressed="'+(S.lib.guia!=='gallinas'&&S.lib.guia!=='cerdos'&&S.lib.guia!=='vacas'&&S.lib.guia!=='peces'&&S.lib.guia!=='hidro')+'">Apiario</button><button class="chip" data-act="libguia" data-v="gallinas" aria-pressed="'+(S.lib.guia==='gallinas')+'">Gallinas</button><button class="chip" data-act="libguia" data-v="cerdos" aria-pressed="'+(S.lib.guia==='cerdos')+'">Cerdos</button><button class="chip" data-act="libguia" data-v="vacas" aria-pressed="'+(S.lib.guia==='vacas')+'">Vacas</button><button class="chip" data-act="libguia" data-v="peces" aria-pressed="'+(S.lib.guia==='peces')+'">Piscicultura</button><button class="chip" data-act="libguia" data-v="hidro" aria-pressed="'+(S.lib.guia==='hidro')+'">Hidroponía</button>'+['Comparativa'].map(function(x){return '<button class="chip" disabled style="opacity:.55;cursor:not-allowed">'+x+' · próximamente</button>'}).join('')+'</div></section>';
+   '<div class="chips"><button class="chip" data-act="libguia" data-v="apiario" aria-pressed="'+(S.lib.guia!=='gallinas'&&S.lib.guia!=='cerdos'&&S.lib.guia!=='vacas'&&S.lib.guia!=='peces'&&S.lib.guia!=='hidro'&&S.lib.guia!=='cmp')+'">Apiario</button><button class="chip" data-act="libguia" data-v="gallinas" aria-pressed="'+(S.lib.guia==='gallinas')+'">Gallinas</button><button class="chip" data-act="libguia" data-v="cerdos" aria-pressed="'+(S.lib.guia==='cerdos')+'">Cerdos</button><button class="chip" data-act="libguia" data-v="vacas" aria-pressed="'+(S.lib.guia==='vacas')+'">Vacas</button><button class="chip" data-act="libguia" data-v="peces" aria-pressed="'+(S.lib.guia==='peces')+'">Piscicultura</button><button class="chip" data-act="libguia" data-v="hidro" aria-pressed="'+(S.lib.guia==='hidro')+'">Hidroponía</button><button class="chip" data-act="libguia" data-v="cmp" aria-pressed="'+(S.lib.guia==='cmp')+'">Comparativa</button>'+[].map(function(x){return '<button class="chip" disabled style="opacity:.55;cursor:not-allowed">'+x+' · próximamente</button>'}).join('')+'</div></section>';
   if(S.lib.guia==='gallinas')return h+vGallinas()+'</div>';
   if(S.lib.guia==='cerdos')return h+vCerdos()+'</div>';
   if(S.lib.guia==='vacas')return h+vVacas()+'</div>';
   if(S.lib.guia==='peces')return h+vPeces()+'</div>';
   if(S.lib.guia==='hidro')return h+vHidro()+'</div>';
+  if(S.lib.guia==='cmp')return h+vComparativa()+'</div>';
   h+='<section class="panel"><h2>Apiario: de cero a la primera cosecha</h2><div class="chips"><button class="chip" data-act="libpais" data-v="Italia" aria-pressed="'+(!co)+'">Italia</button><button class="chip" data-act="libpais" data-v="Colombia" aria-pressed="'+co+'">Colombia</button></div>'+
    '<dl class="figs"><div><dt>Colmenas para empezar</dt><dd>2 a 4</dd><span class="sub">hasta 8 con experiencia</span></div><div><dt>Miel por colmena</dt><dd>'+(co?'~40 kg':'20–30 kg')+'</dd><span class="sub">'+(co?'según datos de Antioquia':'hasta 40–50 kg un buen año')+'</span></div><div><dt>Inversión (4 colmenas)</dt><dd>'+(function(){var c=calcPresu(D,4);return fmt(c.lo)+'–'+fmt(c.hi)+' '+D.mon})()+'</dd></div></dl>'+
    '<p class="muted">'+(co?'Colombia no tiene invierno: las abejas están activas todo el año y la cosecha depende de las floraciones y de las lluvias de tu zona. La abeja africanizada rinde bien pero es defensiva. Fedeabejas calcula que la miel nacional cubre entre el 20% y el 30% de la demanda.':'Una hectárea sobra para un apiario: las abejas buscan néctar en un radio de unos 3 km, y además polinizan frutales, hortalizas y aromáticas de tu terreno. El avellano no, porque se poliniza con el viento.')+'</p></section>';
@@ -1473,6 +1546,7 @@ document.addEventListener('change',function(e){
 });
 document.addEventListener('input',function(e){
   var el=e.target;
+  if(el.id==='cmp_fx'||el.id==='cmp_b'){var fv=parseNum($('cmp_fx').value);if(fv>0){S.lib.fx=fv;try{localStorage.setItem('ct_fx',String(fv))}catch(e){}}var cmo=$('cmp_out');if(cmo)cmo.innerHTML=cmpBody();return}
   if(el.id&&el.id.indexOf('hd_')===0){var hdo=$('hd_out');if(hdo)hdo.innerHTML=hidCalc.apply(null,['hd_n','hd_c','hd_p','hd_nu','hd_e'].map(function(i){return parseNum($(i).value)}));return}
   if(el.id&&el.id.indexOf('pz_')===0){var po=$('pz_out');if(po)po.innerHTML=pezCalc.apply(null,['pz_n','pz_g','pz_s','pz_p','pz_a','pz_f','pz_pi'].map(function(i){return parseNum($(i).value)}));return}
   if(el.id==='vc_n'||el.id==='vc_kgc'||el.id==='vc_pc'||el.id==='vc_kgv'||el.id==='vc_pv'||el.id==='vc_m'||el.id==='vc_a'){var vo=$('vc_out');if(vo)vo.innerHTML=vacCalc.apply(null,['vc_n','vc_kgc','vc_pc','vc_kgv','vc_pv','vc_m','vc_a'].map(function(i){return parseNum($(i).value)}));return}
