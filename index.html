@@ -636,7 +636,7 @@ function calcHtml(n,kg,p){
 }
 
 /* ---------- Guía de gallinas ponedoras ---------- */
-var GAL_ES={mon:'€',huevos:250,precio:0.4,pienso:0.45,
+var GAL_ES={mon:'€',huevos:250,precio:0.4,pienso:0.45,ref:'Referencia de ISMEA: en febrero de 2026 el huevo en Italia valía 311,5 € por 100 kg, es decir, unos 3,1 € por kg o cerca de 0,19 € por huevo al por mayor (cálculo mío, con unos 16 huevos por kg). El precio de 0,40 € de la calculadora es venta directa y es supuesto mío. En Italia se consumen unos 230 huevos al año por persona (ISMEA, 2025).',
  partidas:[
   ['Gallinas ovaiole jóvenes, listas para poner (por ave)','ave',1,8,15,'est'],
   ['Gallinero con refugio, ponederos y posaderos, hecho por ti (para unas 10 gallinas)','fijo',1,150,500,'est'],
@@ -644,7 +644,7 @@ var GAL_ES={mon:'€',huevos:250,precio:0.4,pienso:0.45,
   ['Comederos y bebederos','fijo',1,20,60,'est'],
   ['Cajas de huevos y etiquetas','fijo',1,10,40,'est']
  ]};
-var GAL_CO={mon:'COP',huevos:250,precio:600,pienso:3000,
+var GAL_CO={mon:'COP',huevos:250,precio:564,pienso:3000,ref:'Referencia de SIPSA (DANE), vía Agronegocios: el huevo rojo extra se pagó a 564 COP la unidad como promedio nacional (la página muestra una fecha posterior a hoy, así que trátalo como aproximado). El precio del pienso es supuesto mío.',
  partidas:[
   ['Gallinas ponedoras jóvenes, listas para poner (por ave)','ave',1,25000,40000,'est'],
   ['Gallinero con refugio, ponederos y posaderos, hecho por ti (para unas 10 gallinas)','fijo',1,400000,1500000,'est'],
@@ -688,11 +688,13 @@ var GAL_LEGAL_CO=[
 var GAL_FUENTES_ES=[
  ['Registro de allevamento familiare, ASL Viterbo','https://www.asl.vt.it/storage/uploads/forms/25573a635db3edcdf822092efad52d72.pdf'],
  ['Manual de huevos (Región Friuli Venezia Giulia, ejemplo regional)','https://ppl.regione.fvg.it/public/Info/MANUALE%20UOVA_FVG.pdf'],
- ['D.Lgs. 267/2003 (bienestar de gallinas ovaiole)','https://www.tuttosullegalline.it/newsite/wp-content/uploads/2017/01/NORMATTIVA_267_2003.pdf']
+ ['D.Lgs. 267/2003 (bienestar de gallinas ovaiole)','https://www.tuttosullegalline.it/newsite/wp-content/uploads/2017/01/NORMATTIVA_267_2003.pdf'],
+ ['Mercado de huevos en Italia, ISMEA (vía Zootecnica)','https://zootecnica.it/2026/09/21/mercato-uova-italia-produzione-consumi-2025/']
 ];
 var GAL_FUENTES_CO=[
  ['Resolución ICA 3652 de 2014 (granjas de engorde bioseguras)','https://normograma.invima.gov.co/normograma/docs/pdf/resolucion_ica_3652_2014.pdf'],
- ['Resolución ICA 3642 de 2013 (derogada, para contexto)','https://compilacionmsf.ica.gov.co:4443/compilacion/docs/pdf/resolucion_ica_3642_2013.pdf']
+ ['Resolución ICA 3642 de 2013 (derogada, para contexto)','https://compilacionmsf.ica.gov.co:4443/compilacion/docs/pdf/resolucion_ica_3642_2013.pdf'],
+ ['Precio del huevo rojo extra, SIPSA-DANE (vía Agronegocios)','https://www.agronegocios.co/precios/huevo-rojo-extra']
 ];
 function galD(){return S.lib.pais==='Colombia'?GAL_CO:GAL_ES}
 function galCalc(n,h,p,pi){
@@ -709,7 +711,7 @@ function vGallinas(){
    '<p class="muted">'+(co?'Las gallinas se adaptan a varios pisos térmicos, pero sufren con calor extremo y con noches muy frías. En un terreno de una hectárea caben muchas más aves de las que necesitas para empezar.':'Una hectárea da espacio de sobra para unas pocas gallinas al aire libre, con rotación de parcelas. Tu límite no es el terreno: es el tiempo y el trámite.')+'</p>'+
    '<p class="hint">Las cifras de costos, producción y precios de esta guía son <b>estimaciones mías</b> sin fuente: ajústalas con precios reales de tu zona. Solo los datos legales vienen de las fuentes citadas abajo.</p></section>';
   h+='<section class="panel"><h2>Paso a paso</h2><ol class="steps">'+PASOS.map(function(x){return '<li><b>'+esc(x[0])+'.</b> '+esc(x[1])+'</li>'}).join('')+'</ol></section>';
-  h+='<section class="panel"><h2>Presupuesto y retorno ('+(co?'Colombia, en COP':'Italia, en euros')+')</h2><div class="calc"><label class="fld"><span>Gallinas</span><input type="text" inputmode="numeric" id="gl_n" value="15"></label><label class="fld"><span>Huevos por gallina al año</span><input type="text" inputmode="numeric" id="gl_h" value="'+D.huevos+'"></label><label class="fld"><span>Precio por huevo ('+D.mon+')</span><input type="text" inputmode="decimal" id="gl_p" value="'+D.precio+'"></label><label class="fld"><span>Pienso ('+D.mon+' por kg)</span><input type="text" inputmode="decimal" id="gl_pi" value="'+D.pienso+'"></label></div><div id="gl_out">'+galCalc(15,D.huevos,D.precio,D.pienso)+'</div></section>';
+  h+='<section class="panel"><h2>Presupuesto y retorno ('+(co?'Colombia, en COP':'Italia, en euros')+')</h2><div class="calc"><label class="fld"><span>Gallinas</span><input type="text" inputmode="numeric" id="gl_n" value="15"></label><label class="fld"><span>Huevos por gallina al año</span><input type="text" inputmode="numeric" id="gl_h" value="'+D.huevos+'"></label><label class="fld"><span>Precio por huevo ('+D.mon+')</span><input type="text" inputmode="decimal" id="gl_p" value="'+D.precio+'"></label><label class="fld"><span>Pienso ('+D.mon+' por kg)</span><input type="text" inputmode="decimal" id="gl_pi" value="'+D.pienso+'"></label></div><div id="gl_out">'+galCalc(15,D.huevos,D.precio,D.pienso)+'</div><p class="hint">'+esc(D.ref)+'</p></section>';
   h+='<section class="panel"><h2>Qué dice la ley</h2><ul class="rules">'+LEG.map(function(x){return '<li><b>'+esc(x[0])+':</b> '+esc(x[1])}).join('</li>')+'</li></ul><p class="hint">Resumen de las fuentes citadas, sin valor de asesoría legal. '+(co?'Confirma con el ICA y la alcaldía.':'El manual de huevos es de otra región (Friuli): confirma con la ASL de Viterbo.')+'</p></section>';
   h+='<section class="panel"><h2>Errores comunes de quien empieza</h2><ul class="rules"><li>Comprar muchas aves sin tener gallinero y recinto listos.</li><li>Dejar el gallinero sin protección contra zorros, rapaces y roedores.</li><li>No llevar registros de producción, alimento y sanidad.</li><li>Vender fuera del radio permitido sin cumplir el embalaje.</li><li>Suponer que todas las gallinas ponen igual todo el año: baja con la muda y la edad.</li></ul></section>';
   h+='<section class="panel"><h2>Fuentes</h2><ul class="rules">'+FUE.map(function(f){return '<li><a href="'+f[1]+'" target="_blank" rel="noopener">'+esc(f[0])+'</a></li>'}).join('')+'</ul></section>';
@@ -795,14 +797,14 @@ function vCerdos(){
 }
 
 /* ---------- Guía de vacas ---------- */
-var VAC_ES={mon:'€',n:2,kgc:250,pc:3,kgv:550,pv:2.5,meses:14,alim:40,
+var VAC_ES={mon:'€',n:2,kgc:250,pc:3,kgv:550,pv:2.5,meses:14,alim:40,ref:'Todos los valores de Italia son supuestos míos: aún no tengo precios de bovinos en pie de Lazio.',
  partidas:[
   ['Cerca fuerte (eléctrica o de postes) y puerta','fijo',1,300,1200,'est'],
   ['Refugio o cobertizo abierto contra viento y lluvia','fijo',1,500,2500,'est'],
   ['Bebedero con agua corriente y comedero de heno','fijo',1,100,400,'est'],
   ['Manga o corral de manejo para el veterinario','fijo',1,200,1000,'est']
  ]};
-var VAC_CO={mon:'COP',n:4,kgc:200,pc:9500,kgv:450,pv:8000,meses:18,alim:25000,
+var VAC_CO={mon:'COP',n:4,kgc:200,pc:9241,kgv:450,pv:8931,meses:18,alim:25000,ref:'Precios de Asosubastas (semana 32 de 2026, vía Agronegocios): machos de levante 9.241 COP por kg y machos de ceba 8.931 COP por kg en pie. Los pesos, los meses del ciclo y la alimentación son supuestos míos.',
  partidas:[
   ['Cercas con postes y alambre de púas o eléctrica','fijo',1,2000000,8000000,'est'],
   ['Saladero y bebederos','fijo',1,300000,1200000,'est'],
@@ -846,7 +848,8 @@ var VAC_FUENTES_ES=[
  ['Registro de allevamento familiare, ASL Viterbo','https://www.asl.vt.it/storage/uploads/forms/25573a635db3edcdf822092efad52d72.pdf']
 ];
 var VAC_FUENTES_CO=[
- ['Resolución ICA 090464 de 2021 (Registro Sanitario de Predio Pecuario)','https://www.ica.gov.co/getattachment/74c359e3-9201-4db9-849f-98ab5a9e2d0b/2021R90464.aspx']
+ ['Resolución ICA 090464 de 2021 (Registro Sanitario de Predio Pecuario)','https://www.ica.gov.co/getattachment/74c359e3-9201-4db9-849f-98ab5a9e2d0b/2021R90464.aspx'],
+ ['Precios del ganado, semana 32 de 2026 (Asosubastas, vía Agronegocios)','https://www.agronegocios.co/mercados/asi-se-comporto-el-precio-del-ganado-esta-semana-en-las-principales-subastas-del-pais-4452755']
 ];
 function vacD(){return S.lib.pais==='Colombia'?VAC_CO:VAC_ES}
 function vacCalc(n,kgc,pc,kgv,pv,mes,al){
@@ -863,7 +866,7 @@ function vVacas(){
    '<p class="muted">'+(co?'La ganadería es una actividad tradicional en Colombia. Con una hectárea la escala es muy pequeña: la ceba de pocos animales es lo más realista para empezar.':'En Italia, el allevamento familiare bovino es muy pequeño y es solo para autoconsumo. Para vender carne o leche, el registro es otro y conviene hablar con la ASL antes de comprar nada.')+'</p>'+
    '<p class="hint">Los costos, pesos y precios de esta guía son <b>estimaciones mías</b> sin fuente: ajústalos con datos reales de tu zona. Solo los datos legales vienen de las fuentes citadas.</p></section>';
   h+='<section class="panel"><h2>Paso a paso</h2><ol class="steps">'+PASOS.map(function(x){return '<li><b>'+esc(x[0])+'.</b> '+esc(x[1])+'</li>'}).join('')+'</ol></section>';
-  h+='<section class="panel"><h2>Presupuesto y ciclo de engorde ('+(co?'Colombia, en COP':'Italia, en euros')+')</h2><div class="calc"><label class="fld"><span>Animales</span><input type="text" inputmode="numeric" id="vc_n" value="'+D.n+'"></label><label class="fld"><span>Peso al comprar (kg)</span><input type="text" inputmode="numeric" id="vc_kgc" value="'+D.kgc+'"></label><label class="fld"><span>Precio compra por kg ('+D.mon+')</span><input type="text" inputmode="decimal" id="vc_pc" value="'+D.pc+'"></label><label class="fld"><span>Peso al vender (kg)</span><input type="text" inputmode="numeric" id="vc_kgv" value="'+D.kgv+'"></label><label class="fld"><span>Precio venta por kg ('+D.mon+')</span><input type="text" inputmode="decimal" id="vc_pv" value="'+D.pv+'"></label><label class="fld"><span>Meses del ciclo</span><input type="text" inputmode="numeric" id="vc_m" value="'+D.meses+'"></label><label class="fld"><span>Alimentación extra por animal y mes ('+D.mon+')</span><input type="text" inputmode="decimal" id="vc_a" value="'+D.alim+'"></label></div><div id="vc_out">'+vacCalc(D.n,D.kgc,D.pc,D.kgv,D.pv,D.meses,D.alim)+'</div></section>';
+  h+='<section class="panel"><h2>Presupuesto y ciclo de engorde ('+(co?'Colombia, en COP':'Italia, en euros')+')</h2><div class="calc"><label class="fld"><span>Animales</span><input type="text" inputmode="numeric" id="vc_n" value="'+D.n+'"></label><label class="fld"><span>Peso al comprar (kg)</span><input type="text" inputmode="numeric" id="vc_kgc" value="'+D.kgc+'"></label><label class="fld"><span>Precio compra por kg ('+D.mon+')</span><input type="text" inputmode="decimal" id="vc_pc" value="'+D.pc+'"></label><label class="fld"><span>Peso al vender (kg)</span><input type="text" inputmode="numeric" id="vc_kgv" value="'+D.kgv+'"></label><label class="fld"><span>Precio venta por kg ('+D.mon+')</span><input type="text" inputmode="decimal" id="vc_pv" value="'+D.pv+'"></label><label class="fld"><span>Meses del ciclo</span><input type="text" inputmode="numeric" id="vc_m" value="'+D.meses+'"></label><label class="fld"><span>Alimentación extra por animal y mes ('+D.mon+')</span><input type="text" inputmode="decimal" id="vc_a" value="'+D.alim+'"></label></div><div id="vc_out">'+vacCalc(D.n,D.kgc,D.pc,D.kgv,D.pv,D.meses,D.alim)+'</div><p class="hint">'+esc(D.ref)+'</p></section>';
   h+='<section class="panel"><h2>Qué dice la ley</h2><ul class="rules">'+LEG.map(function(x){return '<li><b>'+esc(x[0])+':</b> '+esc(x[1])}).join('</li>')+'</li></ul><p class="hint">Resumen de las fuentes citadas, sin valor de asesoría legal. '+(co?'Confirma con el ICA y la alcaldía.':'Los formularios son de la ASL de Chieti (Abruzzo): confirma con la ASL de Viterbo.')+'</p></section>';
   h+='<section class="panel"><h2>Errores comunes de quien empieza</h2><ul class="rules"><li>Comprar más animales de los que el pasto y el agua aguantan.</li><li>No calcular la alimentación de la época seca o del invierno.</li><li>Cercas débiles: las reses se escapan o el ganado ajeno entra.</li><li>Empezar sin registro del predio ni vacunación al día.</li><li>Olvidar el costo de sanidad, transporte y mortalidad en las cuentas.</li></ul></section>';
   h+='<section class="panel"><h2>Fuentes</h2><ul class="rules">'+FUE.map(function(f){return '<li><a href="'+f[1]+'" target="_blank" rel="noopener">'+esc(f[0])+'</a></li>'}).join('')+'</ul></section>';
