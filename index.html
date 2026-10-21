@@ -243,6 +243,7 @@ var OPT={
   agua:{desconocido:'Sin dato',riego:'Riego',pozo:'Pozo',red:'Red de agua',fosso:'Arroyo (fosso)',nacimiento:'Nacimiento de agua propio (Colombia)',quebrada:'Quebrada o río (Colombia)',acueducto:'Acueducto veredal (Colombia)',ninguna:'Sin agua'},
   luz:{desconocido:'Sin dato',si:'Con electricidad',no:'Sin electricidad'},
   parque:{desconocido:'Sin dato',si:'Dentro de parque',no:'Fuera de parque'},
+  constr:{desconocido:'Sin dato',si:'Con edificio rural',no:'Sin edificio'},
   edif:{desconocido:'Sin dato',no_edificable:'No edificable (agrícola)',edificable:'Edificable'},
   pais:{Italia:'Italia (EUR)',Colombia:'Colombia (COP)'},
   fuente:{Immobiliare:'Immobiliare.it',Idealista:'Idealista',Subito:'Subito',Fincaraiz:'Fincaraíz',Metrocuadrado:'Metrocuadrado',Ciencuadras:'Ciencuadras',MercadoLibre:'Mercado Libre',Otro:'Otro'}
@@ -322,6 +323,8 @@ var TFIELDS=[
   {k:'agua_nota',l:'Detalle del agua (caudal, distancia, concesión)',t:'text',full:1},
   {k:'luz',l:'Electricidad',t:'sel',o:OPT.luz,def:'desconocido'},
   {k:'parque',l:'Parque nacional',t:'sel',o:OPT.parque,def:'desconocido'},
+  {k:'constr',l:'Edificio rural en el predio (casa, galpón, cascina)',t:'sel',o:OPT.constr,def:'desconocido'},
+  {k:'constr_nota',l:'Detalle del edificio (tipo, estado, m², si está registrado)',t:'text',full:1},
   {k:'mercado',l:'Mercado del cultivo',t:'rate'},
   {k:'cultivo',l:'Qué hay plantado',t:'text',full:1}]},
  {g:'Notas',f:[
@@ -437,7 +440,7 @@ function altAviso(t){
   return out.join('. ');
 }
 var S={view:'terrenos',lib:{pais:'Italia'},terrenos:[],zonas:[],pesos:null,db:null,sample:null,downloads:null,ready:false,dbOff:false,err:null,
-  f:{q:'',alerta:'',estado:'',zona:'',edif:'',alt:'',pais:'',pmax:'',cpmax:'',cha:'',ha:'',seg:'',muni:'',orden:'score'},compare:[],drawer:null};
+  f:{q:'',constr:'',alerta:'',estado:'',zona:'',edif:'',alt:'',pais:'',pmax:'',cpmax:'',cha:'',ha:'',seg:'',muni:'',orden:'score'},compare:[],drawer:null};
 try{var cs=JSON.parse(localStorage.getItem('ct_compare')||'[]');if(Array.isArray(cs))S.compare=cs.slice(0,4)}catch(e){}
 var Q={};
 try{var fx0=parseFloat(localStorage.getItem('ct_fx'));if(fx0>0)S.lib.fx=fx0}catch(e){}
@@ -527,6 +530,7 @@ function tagsFor(t){
   if(t.luz==='si')a.push(['Electricidad','good']);else if(t.luz==='no')a.push(['Sin electricidad','bad']);
   if(t.acceso==='asfalto')a.push(['Asfalto','good']);else if(t.acceso==='sterrato')a.push(['Camino de tierra','']);else if(t.acceso==='sentiero')a.push(['Solo sendero','bad']);
   if(t.parque==='si')a.push(['Parque nacional','warn']);
+  if(t.constr==='si')a.push(['Con edificio','good']);else if(t.constr==='no')a.push(['Sin edificio','']);
   if(t.pais==='Colombia')a.push(['Colombia','warn']);
   var ab=altBanda(t.altitud,t.pais);if(ab)a.push([fmt(t.altitud)+' m',ab.c]);else a.push(['Altitud sin dato','']);
   if(altAviso(t))a.push(['Cultivo fuera de rango de altura','bad']);
@@ -1546,6 +1550,7 @@ function visibles(){
       if(S.f.muni&&segKey(t.comune)!==S.f.muni)return false;
       if(S.f.seg!==''){var sg=segOf(t);if(S.f.seg==='sin'){if(sg)return false}else if(!sg||sg.l>Number(S.f.seg))return false}
     }
+    if(S.f.constr&&(t.constr||'desconocido')!==S.f.constr)return false;
     if(S.f.alerta==='si'&&t.alerta!=='si')return false;
     if(S.f.alerta==='no'&&t.alerta==='si')return false;
     if(S.f.ha){var hh=(t.m2||0)/10000,rg=S.f.ha.split('-'),lo=Number(rg[0]),hi=rg[1]===''?Infinity:Number(rg[1]);if(!(t.m2>0&&hh>=lo&&hh<hi))return false}
@@ -1587,7 +1592,7 @@ function vTerrenos(){
       sel('fcs','Seguridad',[['','Toda seguridad'],['0','Solo riesgo bajo'],['1','Hasta riesgo moderado'],['2','Hasta riesgo alto'],['sin','Sin información']],S.f.seg);
   }
   var oopts=[['score','Mejor puntuación'],['seg','Menor riesgo de seguridad'],['pha','Menor €/ha'],['precio','Menor precio'],['m2','Mayor superficie'],['nombre','Nombre']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.orden===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('');
-  var h='<div class="bar"><input class="grow" type="text" id="q" placeholder="Buscar por nombre, comune o cultivo" value="'+esc(S.f.q)+'" aria-label="Buscar"><select id="fz" aria-label="Zona">'+zopts+'</select><select id="fe" aria-label="Edificabilidad">'+eopts+'</select><select id="fa" aria-label="Altitud">'+aopts+'</select><select id="fha" aria-label="Hectáreas">'+hopts+'</select><select id="fal" aria-label="Alertas">'+[['','Con y sin alerta'],['si','Solo con alerta'],['no','Sin alerta']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.alerta===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('')+'</select><select id="fpa" aria-label="País">'+popts+'</select>'+(co?'':'<select id="fpm" aria-label="Presupuesto máximo">'+mopts+'</select>')+''+cx+'<select id="fo" aria-label="Ordenar">'+oopts+'</select></div>';
+  var h='<div class="bar"><input class="grow" type="text" id="q" placeholder="Buscar por nombre, comune o cultivo" value="'+esc(S.f.q)+'" aria-label="Buscar"><select id="fz" aria-label="Zona">'+zopts+'</select><select id="fe" aria-label="Edificabilidad">'+eopts+'</select><select id="fa" aria-label="Altitud">'+aopts+'</select><select id="fha" aria-label="Hectáreas">'+hopts+'</select><select id="fcn" aria-label="Edificio rural">'+[['','Con o sin edificio'],['si','Con edificio rural'],['no','Sin edificio'],['desconocido','Edificio sin dato']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.constr===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('')+'</select><select id="fal" aria-label="Alertas">'+[['','Con y sin alerta'],['si','Solo con alerta'],['no','Sin alerta']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.alerta===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('')+'</select><select id="fpa" aria-label="País">'+popts+'</select>'+(co?'':'<select id="fpm" aria-label="Presupuesto máximo">'+mopts+'</select>')+''+cx+'<select id="fo" aria-label="Ordenar">'+oopts+'</select></div>';
   h+='<div class="bar"><button class="btn pri" data-act="nuevo">Nuevo terreno</button><button class="btn" data-act="importar">Pegar anuncio</button>'+(S.downloads?'<button class="btn" data-act="csv">Exportar CSV</button><button class="btn" data-act="backup">Copia de seguridad</button>':'')+'</div>';
   h+='<div class="chips">'+chips+'</div>';
   if(!S.terrenos.length)return h+'<div class="empty"><h2>Aún no hay terrenos</h2><p>Pega el texto de un anuncio de Immobiliare, Idealista o Subito, o crea la primera ficha a mano.</p></div>';
@@ -1624,7 +1629,7 @@ function vComparar(){
   h+=row('€ o COP por ha',rows.map(function(r){return r.p}),function(v){return v==null?'—':'<span class="mono">'+fmt(v)+'</span>'},'min');
   h+=row('País',rows.map(function(r){return r.t.pais||'Italia'}),function(v){return esc(OPT.pais[v]||v)});
   h+=row('Zona',rows.map(function(r){return r.t.zona}),function(v){var z=zona(v);return z?esc(z.nombre):'—'});
-  [['relieve','Relieve'],['acceso','Acceso'],['agua','Agua'],['luz','Electricidad'],['parque','Parque'],['edif','Edificabilidad']].forEach(function(p){
+  [['relieve','Relieve'],['acceso','Acceso'],['agua','Agua'],['luz','Electricidad'],['parque','Parque'],['constr','Edificio rural'],['edif','Edificabilidad']].forEach(function(p){
     h+=row(p[1],rows.map(function(r){return r.t[p[0]]||'desconocido'}),function(v){return esc(OPT[p[0]][v]||v)});
   });
   h+=row('Altitud',rows.map(function(r){return r.t.altitud!=null&&!isNaN(r.t.altitud)?Number(r.t.altitud):null}),function(v,i){return v==null?'—':'<span class="mono">'+fmt(v)+' m</span> <span class="muted">'+altBanda(v,rows[i].t.pais).l+'</span>'});
@@ -1826,7 +1831,7 @@ async function extraer(){
   var txt=$('imp_txt').value.trim(),url=$('imp_url').value.trim(),msg=$('imp_msg'),btn=$('btn_ext');
   if(txt.length<40){msg.textContent='Pega el texto completo del anuncio.';return}
   btn.disabled=true;msg.textContent='Claude está leyendo el anuncio…';
-  var prompt='Extrae datos de un anuncio de terreno en venta en Italia. Devuelve SOLO un objeto JSON con estas claves: nombre (texto corto: tipo y localidad), comune, provincia, precio (número en euros o null), m2 (número o null), relieve (llano|leve|medio|ladera|desconocido), acceso (asfalto|sterrato|sentiero|desconocido), agua (riego|pozo|red|fosso|ninguna|desconocido), luz (si|no|desconocido), parque (si|no|desconocido), cultivo (qué hay plantado, vacío si no se dice), fecha_anuncio (como aparece, vacío si no aparece), notas (una o dos frases en español con datos útiles que no encajan en otros campos, como edificaciones o dudas sobre el precio).\nReglas: no inventes nada; si un dato no aparece usa "desconocido" o null. Pianeggiante o pianura = llano; leggero dislivello = leve; medio dislivello = medio; ripido o pendio = ladera. Strada asfaltata o via pubblica = asfalto; strada sterrata o bianca = sterrato; sentiero = sentiero. Si el precio parece un marcador (por ejemplo 1.000 € para varias hectáreas), pon el número publicado en precio y explica la duda en notas. La superficie en m².\n\nTexto del anuncio:\n"""\n'+txt.slice(0,20000)+'\n"""';
+  var prompt='Extrae datos de un anuncio de terreno en venta en Italia. Devuelve SOLO un objeto JSON con estas claves: nombre (texto corto: tipo y localidad), comune, provincia, precio (número en euros o null), m2 (número o null), relieve (llano|leve|medio|ladera|desconocido), acceso (asfalto|sterrato|sentiero|desconocido), agua (riego|pozo|red|fosso|ninguna|desconocido), luz (si|no|desconocido), parque (si|no|desconocido), constr (si si hay casa, galpón, cascina, rústico u otro edificio en el predio; no si dice que no hay; desconocido si no se dice), constr_nota (descripción breve del edificio, vacío si no hay), cultivo (qué hay plantado, vacío si no se dice), fecha_anuncio (como aparece, vacío si no aparece), notas (una o dos frases en español con datos útiles que no encajan en otros campos, como edificaciones o dudas sobre el precio).\nReglas: no inventes nada; si un dato no aparece usa "desconocido" o null. Pianeggiante o pianura = llano; leggero dislivello = leve; medio dislivello = medio; ripido o pendio = ladera. Strada asfaltata o via pubblica = asfalto; strada sterrata o bianca = sterrato; sentiero = sentiero. Si el precio parece un marcador (por ejemplo 1.000 € para varias hectáreas), pon el número publicado en precio y explica la duda en notas. La superficie en m².\n\nTexto del anuncio:\n"""\n'+txt.slice(0,20000)+'\n"""';
   try{
     var r=await S.sample.json(prompt,{modelTier:'quick'});
     if(!r||typeof r!=='object')throw{code:'invalid_json'};
@@ -1835,7 +1840,7 @@ async function extraer(){
     var pre={nombre:String(r.nombre||''),url:url,fuente:fuente,estado:'por_revisar',comune:String(r.comune||''),provincia:String(r.provincia||''),
       zona:guessZona(r.provincia)||'',precio:typeof r.precio==='number'?r.precio:parseNum(r.precio),m2:typeof r.m2==='number'?r.m2:parseNum(r.m2),
       relieve:oneOf(r.relieve,OPT.relieve,'desconocido'),acceso:oneOf(r.acceso,OPT.acceso,'desconocido'),agua:oneOf(r.agua,OPT.agua,'desconocido'),
-      luz:oneOf(r.luz,OPT.luz,'desconocido'),parque:oneOf(r.parque,OPT.parque,'desconocido'),cultivo:String(r.cultivo||''),fecha_anuncio:String(r.fecha_anuncio||''),notas:String(r.notas||'')};
+      luz:oneOf(r.luz,OPT.luz,'desconocido'),parque:oneOf(r.parque,OPT.parque,'desconocido'),constr:oneOf(r.constr,OPT.constr,'desconocido'),constr_nota:String(r.constr_nota||''),cultivo:String(r.cultivo||''),fecha_anuncio:String(r.fecha_anuncio||''),notas:String(r.notas||'')};
     openDrawer({type:'terreno',id:null,prefill:pre});toast('Datos extraídos. Revisa y guarda.');
   }catch(e){
     var c=e&&e.code;btn.disabled=false;
@@ -1843,7 +1848,7 @@ async function extraer(){
   }
 }
 function csv(){
-  var cols=['nombre','pais','comune','provincia','zona','estado','precio','m2','eur_ha','puntuacion','relieve','acceso','agua','luz','parque','edif','altitud','cultivo','mercado','fuente','url','fecha_anuncio','notas'];
+  var cols=['nombre','pais','comune','provincia','zona','estado','precio','m2','eur_ha','puntuacion','relieve','acceso','agua','luz','parque','constr','edif','altitud','cultivo','mercado','fuente','url','fecha_anuncio','notas'];
   function q(v){v=v==null?'':String(v);return /[",\n;]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
   var lines=[cols.join(',')];
   S.terrenos.forEach(function(t){var s=score(t),p=ppha(t);
@@ -1910,6 +1915,7 @@ document.addEventListener('change',function(e){
   if(el.id==='fa'){S.f.alt=el.value;render();return}
   if(el.id==='fpa'){S.f.pais=el.value;render();return}
   if(el.id==='fcm'){S.f.cpmax=el.value;render();return}
+  if(el.id==='fcn'){S.f.constr=el.value;render();return}
   if(el.id==='fal'){S.f.alerta=el.value;render();return}
   if(el.id==='fha'){S.f.ha=el.value;render();return}
   if(el.id==='fcmu'){S.f.muni=el.value;render();return}
