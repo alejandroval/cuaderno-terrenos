@@ -1098,6 +1098,99 @@ function vHidro(){
   return h;
 }
 
+/* ---------- Autosostenimiento y energía propia ---------- */
+var AUT_ES={mon:'€',kwh:10,hsp:4,dias:2,tarifa:0.30,
+ panel:[1300,1900,'parcial'],bat:[300,600,'est'],inv:[800,2000,'est'],prot:[300,900,'est']};
+var AUT_CO={mon:'COP',kwh:6,hsp:4.5,dias:2,tarifa:900,
+ panel:[4700000,6800000,'est'],bat:[1100000,2200000,'est'],inv:[2900000,7200000,'est'],prot:[1100000,3200000,'est']};
+function autD(){return S.lib.pais==='Colombia'?AUT_CO:AUT_ES}
+function autCalc(kwh,hsp,dias,tarifa){
+  var D=autD();kwh=Math.max(0,kwh||0);hsp=Math.max(0.5,hsp||0.5);dias=Math.max(0,dias||0);tarifa=Math.max(0,tarifa||0);
+  function m(x){return fmt(Math.round(x))+' '+D.mon}
+  var PR=0.75,kwp=kwh/(hsp*PR),bat=dias>0?kwh*dias/(0.8*0.9):0,area=kwp*6;
+  var rows=[],lo=0,hi=0;
+  function add(t,r,k,tag){var a=r[0]*k,b=r[1]*k;lo+=a;hi+=b;rows.push('<tr><td>'+t+' '+tagFuente(tag)+'</td><td class="mono">'+m(a)+' – '+m(b)+'</td></tr>')}
+  add('Paneles, estructura e instalación ('+(Math.round(kwp*10)/10)+' kWp)',D.panel,kwp,D.panel[2]);
+  if(dias>0)add('Baterías de litio ('+(Math.round(bat*10)/10)+' kWh útiles)',D.bat,bat,D.bat[2]);
+  add(dias>0?'Inversor híbrido o de isla, y regulador':'Inversor conectado a la red',D.inv,1,D.inv[2]);
+  add('Protecciones, cableado y puesta a tierra',D.prot,1,D.prot[2]);
+  var ahorro=kwh*365*tarifa,mid=(lo+hi)/2;
+  return '<div class="tablewrap"><table class="cost">'+rows.join('')+'<tr class="tot"><td>Inversión inicial</td><td>'+m(lo)+' – '+m(hi)+'</td></tr></table></div>'+
+   '<p class="live-top"><span><b>Potencia necesaria:</b> unos '+(Math.round(kwp*10)/10)+' kWp, que ocupan alrededor de '+Math.round(area)+' m² de paneles. '+(dias>0?'<b>Baterías:</b> '+(Math.round(bat*10)/10)+' kWh de capacidad para '+dias+' día(s) sin sol. ':'')+'<b>Energía que dejas de comprar:</b> unos '+fmt(Math.round(kwh*365))+' kWh al año, es decir '+m(ahorro)+' con la tarifa indicada. '+(ahorro>0?'Recuperar la inversión media tardaría unos '+(Math.round(mid/ahorro*10)/10)+' años, sin contar mantenimiento ni reposición de baterías.':'')+'</span></p>';
+}
+function mhCalc(q,h,ef){
+  q=Math.max(0,q||0);h=Math.max(0,h||0);ef=Math.min(0.9,Math.max(0.1,ef||0.5));
+  var w=9.81*q*h*ef,kwhd=w*24/1000;
+  return '<p class="live-top"><span><b>Potencia continua:</b> unos '+fmt(Math.round(w))+' W (fórmula P = 9,81 × caudal en L/s × caída en m × eficiencia). <b>Energía al día:</b> unos '+(Math.round(kwhd*10)/10)+' kWh si el caudal es constante las 24 horas. '+(w<=0?'':(kwhd>=10?'Eso cubre una casa familiar entera.':'Compáralo con tu consumo diario de arriba.'))+' Mide el caudal en la estación más seca, porque es el que manda.</span></p>';
+}
+var AUT_CAPAS=[
+ ['Electricidad','Paneles solares con baterías, o conectados a la red con baterías de respaldo. Con una quebrada con caída, una microturbina.','Diagrama de la instalación, lista de equipos y garantías, procedimiento de apagado seguro y mantenimiento anual.'],
+ ['Agua','Pozo o captación de nacimiento o quebrada, depósito, filtración y recogida de lluvia del tejado.','Plano de tuberías y válvulas, calendario de limpieza del depósito y de cambio de filtros.'],
+ ['Alimentos','Huerto, frutales, gallinas, colmenas y, si el terreno lo permite, cerdos o peces. Ve las demás guías de la Biblioteca.','Calendario de siembra y cosecha, registro de animales y sanidad, y conservas.'],
+ ['Calor y cocina','Leña de la propia parcela, estufa eficiente, solar térmico para agua caliente, y gas en bombona como respaldo.','Mantenimiento de chimeneas y estufa, y almacén de leña con dos años de secado.'],
+ ['Residuos y aguas','Compost, aguas grises hacia filtro o fosa según permita el Comune o la autoridad ambiental, y separación de residuos.','Esquema de la fosa o sistema y fechas de vaciado.'],
+ ['Comunicaciones','Internet por fibra, radio o satélite, y teléfono. Tu perfil de redes te permite montar esto tú mismo.','Esquema de red, claves guardadas en un lugar seguro y contactos de emergencia.'],
+ ['Herramientas y respaldo','Generador pequeño, linternas, herramientas manuales, botiquín y reserva de combustible y alimentos.','Lista de inventario con ubicación y fechas de revisión.']
+];
+var AUT_PASOS=[
+ ['Mide tu consumo real','Suma los kWh de las facturas de los últimos 12 meses y divide por 365. Así tienes el consumo diario, que es el dato que más pesa en todo el diseño. Mira también los picos: horno, bomba, lavadora y, sobre todo, cualquier motor de arranque.'],
+ ['Reduce antes de generar','Cada kWh que no consumes es el más barato. Cambia a iluminación LED, electrodomésticos eficientes y calienta el agua con sol o leña en lugar de resistencia eléctrica. Esto suele permitir paneles y baterías más pequeños.'],
+ ['Elige el modelo','Conectado a la red: más barato, sin baterías, pero se apaga si hay un corte. Híbrido: paneles, baterías y red como respaldo. Aislado: sin red, exige baterías y un generador de apoyo y es lo más caro por kWh.'],
+ ['Dimensiona','Usa la calculadora de esta página con tu consumo diario. Para ahorrar dinero, usa las horas de sol pico del promedio anual. Para vivir sin red todo el año, usa las del peor mes, que en Italia central es mucho menor que el promedio.'],
+ ['Elige la ubicación','Orientación al sur en Italia (al ecuador en Colombia), sin sombras de 9 a 15 horas, cerca de las baterías y de la casa para acortar el cable. En Italia, comprueba antes si el terreno tiene un edificio rural donde ir en el tejado, porque instalar a tierra en suelo agrícola tiene muchas más restricciones.'],
+ ['Tramita lo necesario','Consulta con el Comune y el distribuidor de red (en Italia) o con el operador de red (en Colombia) antes de comprar. Ve el apartado de ley más abajo.'],
+ ['Instala con un profesional certificado','La parte de corriente continua de un campo solar mantiene tensión mientras haya luz y las baterías de litio almacenan mucha energía. Haz el trabajo eléctrico final con un instalador habilitado, que además emite la declaración de conformidad que piden el distribuidor y el seguro.'],
+ ['Pon en marcha y documenta','Anota tensiones, corrientes y producción el primer día, haz el diagrama definitivo y deja los manuales (apartado siguiente) guardados en papel y en digital.'],
+ ['Mantén','Limpia los paneles dos veces al año, revisa conexiones y tornillos, y comprueba el estado de las baterías y el registro de producción. Una caída sostenida de producción casi siempre es sombra, suciedad o un fallo de cableado.']
+];
+var AUT_MANUAL=[
+ 'Diagrama de toda la instalación eléctrica, con cada equipo, cable y protección.',
+ 'Lista de equipos: marca, modelo, número de serie, fecha de compra y garantía.',
+ 'Procedimiento de apagado seguro, paso a paso y con fotos: primero las cargas, luego el inversor, las baterías y los paneles.',
+ 'Procedimiento de arranque después de un apagado total o una desconexión de baterías.',
+ 'Qué hacer si se corta la luz, si salta una protección o si hay un olor a quemado.',
+ 'Calendario de mantenimiento anual y registro de lo que se hizo.',
+ 'Valores normales: tensión de baterías, producción diaria típica por estación y consumos por aparato.',
+ 'Plano de agua, válvulas y depósito, y plano de la fosa o sistema de aguas.',
+ 'Teléfonos de emergencia: instalador, electricista, distribuidor de red, bomberos, centro de salud.',
+ 'Copia de permisos, contratos, declaraciones de conformidad y facturas.',
+ 'Inventario de herramientas, repuestos, combustible y reservas de alimentos, con su ubicación.'
+];
+var AUT_LEGAL_ES=[
+ ['Paneles sobre suelo agrícola','Según una síntesis de la Ley 4/2026 (que modifica el D.Lgs. 190/2024), los módulos en suelo agrícola solo pueden ir en tipos de sitios concretos, sobre todo ya degradados o de infraestructura, y no en cualquier terreno cultivado. Las instalaciones a tierra quedan fuera de las simplificaciones de las que sí disfrutan los tejados.'],
+ ['Agrivoltaico','Instalación elevada que convive con el cultivo. Exige una declaración jurada de un técnico que acredite al menos el 80% de la producción bruta vendible anterior, y el Comune la comprueba durante cinco años.'],
+ ['Qué procedimiento','Una fuente comercial indica que la PAS llega a 1 MW en áreas idóneas y la autorización única supera ese valor. No pude confirmar qué umbral aplica a una instalación doméstica pequeña a tierra, así que pregunta antes al Comune.'],
+ ['Tejado de un edificio existente','Es el camino más simple, pero depende de que el terreno tenga un edificio rural legal. En un terreno sin edificios no hay tejado: es un criterio que conviene anotar en cada ficha.'],
+ ['Microhidráulica y pozos','Sin verificar: qué concesión de derivación de agua y qué autorización ambiental exige tomar agua de un curso o pozo para turbina o riego. Consulta en la Regione, el Genio Civile y el Comune.']
+];
+var AUT_LEGAL_CO=[
+ ['Autogeneración conectada a la red','La Resolución CREG 174 de 2021 define el AGPE como autogenerador con capacidad de hasta 1 MW. No exige estudio de conexión a un AGPE que no entrega excedentes, ni al que entrega excedentes con capacidad de 100 kW o menos. El formulario de conexión es simplificado.'],
+ ['Excedentes','Los excedentes de un AGPE con energías renovables se compensan como crédito de energía contra la importación en el período de facturación. El operador de red puede limitar la entrega si el circuito supera el 50% de su capacidad.'],
+ ['Sistema aislado','Esa resolución cubre solo el Sistema Interconectado Nacional. Para un sistema totalmente aislado, sin verificar: qué permisos pide el municipio y si hay requisitos específicos. Consulta en la oficina de planeación.'],
+ ['Agua para turbina','Si tomas agua de una quebrada o nacimiento, la autoridad ambiental (Corantioquia, Cornare o Corpourabá en Antioquia) puede exigir concesión. Confirma con la tuya.']
+];
+var AUT_FUENTES=[
+ ['Fotovoltaico a terra: PAS, autorización única y costos de referencia (Solare Industriale)','https://www.solareindustriale.it/blog-fotovoltaico/fotovoltaico-terra-guida'],
+ ['Áreas idóneas y agrivoltaico, Ley 4/2026 (Lente Pubblica)','https://lentepubblica.it/buone-pratiche/aree-idonee-per-lagrivoltaico-cosa-cambia-per-i-comuni-dal-2026/'],
+ ['Resolución CREG 174 de 2021 (autogeneración y generación distribuida)','https://devpaginaceo.ceoesp.com.co/documents/1058814/3157922/Creg174-2021.pdf'],
+ ['Ley 1715 de 2014 (energías renovables en Colombia)','https://gestornormativo.creg.gov.co/gestor/entorno/docs/ley_1715_2014.htm']
+];
+function vAuto(){
+  var co=S.lib.pais==='Colombia',D=autD(),LEG=co?AUT_LEGAL_CO:AUT_LEGAL_ES;
+  var h='<section class="panel"><h2>Autosostenimiento y energía propia</h2><div class="chips"><button class="chip" data-act="libpais" data-v="Italia" aria-pressed="'+(!co)+'">Italia</button><button class="chip" data-act="libpais" data-v="Colombia" aria-pressed="'+co+'">Colombia</button></div>'+
+   '<p class="muted">Plan para que la parcela produzca su propia electricidad, agua, comida y calor, y deje todo documentado para que cualquiera pueda operarla. La energía es la parte central: define dónde se puede vivir y producir sin depender de una red lejana o cara.</p>'+
+   '<p class="hint">Las normas vienen de las fuentes citadas al final. <b>Las horas de sol, los costos y los precios de la electricidad son estimaciones mías</b> sin fuente, salvo el costo del campo solar en Italia, que parte de una referencia comercial (10 kWp cuestan entre 13.000 y 19.000 €). Pide siempre presupuestos reales.</p></section>';
+  h+='<section class="panel"><h2>Las siete capas del autosostenimiento</h2><div class="tablewrap"><table><thead><tr><th>Capa</th><th>Qué hacer</th><th>Qué dejar documentado</th></tr></thead><tbody>'+AUT_CAPAS.map(function(r){return '<tr><td><b>'+esc(r[0])+'</b></td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td></tr>'}).join('')+'</tbody></table></div></section>';
+  h+='<section class="panel"><h2>Energía eléctrica: paso a paso</h2><ol class="steps">'+AUT_PASOS.map(function(x){return '<li><b>'+esc(x[0])+'.</b> '+esc(x[1])+'</li>'}).join('')+'</ol></section>';
+  h+='<section class="panel"><h2>Calculadora solar ('+(co?'Colombia, en COP':'Italia, en euros')+')</h2><p class="muted">Pon los días de autonomía en 0 para una instalación conectada a la red sin baterías. Las horas de sol pico son el promedio anual aproximado; '+(co?'en Antioquia varían poco entre estaciones, pero la nubosidad cambia mucho según el municipio.':'en diciembre bajan a la mitad o menos, por eso vivir sin red todo el año exige un campo bastante mayor.')+'</p><div class="calc"><label class="fld"><span>Consumo diario (kWh)</span><input type="text" inputmode="decimal" id="au_k" value="'+D.kwh+'"></label><label class="fld"><span>Horas de sol pico al día</span><input type="text" inputmode="decimal" id="au_h" value="'+D.hsp+'"></label><label class="fld"><span>Días de autonomía de baterías</span><input type="text" inputmode="decimal" id="au_d" value="'+D.dias+'"></label><label class="fld"><span>Precio de la electricidad ('+D.mon+'/kWh)</span><input type="text" inputmode="decimal" id="au_t" value="'+D.tarifa+'"></label></div><div id="au_out">'+autCalc(D.kwh,D.hsp,D.dias,D.tarifa)+'</div><p class="hint">Método: potencia = consumo ÷ (horas de sol × 0,75 de rendimiento del sistema); baterías = consumo × días ÷ (0,8 de descarga útil × 0,9 de eficiencia); unos 6 m² de panel por kWp. Son reglas de diseño habituales, no un estudio de tu parcela.</p></section>';
+  h+='<section class="panel"><h2>Microhidráulica: si hay quebrada o nacimiento</h2><p class="muted">Una caída de agua produce electricidad día y noche, a diferencia del sol, y complementa muy bien a las baterías. Esto interesa sobre todo en Antioquia, donde el agua propia ya es un criterio de puntuación.</p><div class="calc"><label class="fld"><span>Caudal aprovechable (L/s)</span><input type="text" inputmode="decimal" id="mh_q" value="5"></label><label class="fld"><span>Caída (m)</span><input type="text" inputmode="decimal" id="mh_h" value="20"></label><label class="fld"><span>Eficiencia (0,3 a 0,7)</span><input type="text" inputmode="decimal" id="mh_e" value="0.5"></label></div><div id="mh_out">'+mhCalc(5,20,0.5)+'</div></section>';
+  h+='<section class="panel"><h2>Manual de operación: qué dejar escrito</h2><p class="muted">Pensado para que alguien sin tu formación pueda manejar la parcela si tú no estás. Guárdalo impreso en la casa y en la nube.</p><ul class="rules">'+AUT_MANUAL.map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul></section>';
+  h+='<section class="panel"><h2>Qué dice la ley</h2><ul class="rules">'+LEG.map(function(x){return '<li><b>'+esc(x[0])+':</b> '+esc(x[1])}).join('</li>')+'</li></ul><p class="hint">Resumen de las fuentes citadas, sin valor de asesoría legal. '+(co?'Confirma con el operador de red y con la planeación municipal.':'Confirma con el ufficio tecnico del Comune y con el distribuidor de red.')+'</p></section>';
+  h+='<section class="panel"><h2>Errores comunes</h2><ul class="rules"><li>Dimensionar con el promedio anual y esperar vivir sin red en diciembre.</li><li>Comprar baterías baratas sin sistema de gestión (BMS) ni protecciones.</li><li>No contar con picos de arranque de bombas y motores al elegir el inversor.</li><li>Comprar el terreno sin comprobar si tiene edificio donde instalar y acceso de red cercano.</li><li>Montar el trabajo eléctrico final sin instalador habilitado.</li><li>No dejar manuales: si solo tú sabes cómo funciona, la parcela depende de ti.</li></ul></section>';
+  h+='<section class="panel"><h2>Fuentes</h2><ul class="rules">'+AUT_FUENTES.map(function(f){return '<li><a href="'+f[1]+'" target="_blank" rel="noopener">'+esc(f[0])+'</a></li>'}).join('')+'</ul></section>';
+  return h;
+}
+
 /* ---------- Comparativa y cambio euro-peso ---------- */
 var FX_HIST=[['1 ene',4432],['31 ene',4359],['30 abr',4292],['31 jul',3644],['20 oct',3563]];
 var CMP_TXT=[
@@ -1253,12 +1346,13 @@ function vBiblioteca(){
   var D=apiD(),co=S.lib.pais==='Colombia',PASOS=co?PASOS_CO:PASOS_ES,LEG=co?LEGAL_CO:LEGAL_ES,FUE=co?FUENTES_CO:FUENTES_ES;
   var h='<div class="stack">';
   h+='<section class="panel"><h2>Biblioteca de autosuficiencia</h2><p class="muted">Guías para producir tu propia comida y generar ingresos con la tierra. Cada guía trae pasos, presupuesto, calendario y fuentes.</p>'+
-   '<div class="chips"><button class="chip" data-act="libguia" data-v="apiario" aria-pressed="'+(S.lib.guia!=='gallinas'&&S.lib.guia!=='cerdos'&&S.lib.guia!=='vacas'&&S.lib.guia!=='peces'&&S.lib.guia!=='hidro'&&S.lib.guia!=='cmp')+'">Apiario</button><button class="chip" data-act="libguia" data-v="gallinas" aria-pressed="'+(S.lib.guia==='gallinas')+'">Gallinas</button><button class="chip" data-act="libguia" data-v="cerdos" aria-pressed="'+(S.lib.guia==='cerdos')+'">Cerdos</button><button class="chip" data-act="libguia" data-v="vacas" aria-pressed="'+(S.lib.guia==='vacas')+'">Vacas</button><button class="chip" data-act="libguia" data-v="peces" aria-pressed="'+(S.lib.guia==='peces')+'">Piscicultura</button><button class="chip" data-act="libguia" data-v="hidro" aria-pressed="'+(S.lib.guia==='hidro')+'">Hidroponía</button><button class="chip" data-act="libguia" data-v="cmp" aria-pressed="'+(S.lib.guia==='cmp')+'">Comparativa</button>'+[].map(function(x){return '<button class="chip" disabled style="opacity:.55;cursor:not-allowed">'+x+' · próximamente</button>'}).join('')+'</div></section>';
+   '<div class="chips"><button class="chip" data-act="libguia" data-v="apiario" aria-pressed="'+(S.lib.guia!=='gallinas'&&S.lib.guia!=='cerdos'&&S.lib.guia!=='vacas'&&S.lib.guia!=='peces'&&S.lib.guia!=='hidro'&&S.lib.guia!=='auto'&&S.lib.guia!=='cmp')+'">Apiario</button><button class="chip" data-act="libguia" data-v="gallinas" aria-pressed="'+(S.lib.guia==='gallinas')+'">Gallinas</button><button class="chip" data-act="libguia" data-v="cerdos" aria-pressed="'+(S.lib.guia==='cerdos')+'">Cerdos</button><button class="chip" data-act="libguia" data-v="vacas" aria-pressed="'+(S.lib.guia==='vacas')+'">Vacas</button><button class="chip" data-act="libguia" data-v="peces" aria-pressed="'+(S.lib.guia==='peces')+'">Piscicultura</button><button class="chip" data-act="libguia" data-v="hidro" aria-pressed="'+(S.lib.guia==='hidro')+'">Hidroponía</button><button class="chip" data-act="libguia" data-v="auto" aria-pressed="'+(S.lib.guia==='auto')+'">Autosostenimiento</button><button class="chip" data-act="libguia" data-v="cmp" aria-pressed="'+(S.lib.guia==='cmp')+'">Comparativa</button>'+[].map(function(x){return '<button class="chip" disabled style="opacity:.55;cursor:not-allowed">'+x+' · próximamente</button>'}).join('')+'</div></section>';
   if(S.lib.guia==='gallinas')return h+vGallinas()+'</div>';
   if(S.lib.guia==='cerdos')return h+vCerdos()+'</div>';
   if(S.lib.guia==='vacas')return h+vVacas()+'</div>';
   if(S.lib.guia==='peces')return h+vPeces()+'</div>';
   if(S.lib.guia==='hidro')return h+vHidro()+'</div>';
+  if(S.lib.guia==='auto')return h+vAuto()+'</div>';
   if(S.lib.guia==='cmp')return h+vComparativa()+'</div>';
   h+='<section class="panel"><h2>Apiario: de cero a la primera cosecha</h2><div class="chips"><button class="chip" data-act="libpais" data-v="Italia" aria-pressed="'+(!co)+'">Italia</button><button class="chip" data-act="libpais" data-v="Colombia" aria-pressed="'+co+'">Colombia</button></div>'+
    '<dl class="figs"><div><dt>Colmenas para empezar</dt><dd>2 a 4</dd><span class="sub">hasta 8 con experiencia</span></div><div><dt>Miel por colmena</dt><dd>'+(co?'~40 kg':'20–30 kg')+'</dd><span class="sub">'+(co?'según datos de Antioquia':'hasta 40–50 kg un buen año')+'</span></div><div><dt>Inversión (4 colmenas)</dt><dd>'+(function(){var c=calcPresu(D,4);return fmt(c.lo)+'–'+fmt(c.hi)+' '+D.mon})()+'</dd></div></dl>'+
@@ -1642,6 +1736,8 @@ document.addEventListener('change',function(e){
 document.addEventListener('input',function(e){
   var el=e.target;
   if(el.id==='cmp_fx'||el.id==='cmp_b'){var fv=parseNum($('cmp_fx').value);if(fv>0){S.lib.fx=fv;try{localStorage.setItem('ct_fx',String(fv))}catch(e){}}var cmo=$('cmp_out');if(cmo)cmo.innerHTML=cmpBody();return}
+  if(el.id&&el.id.indexOf('au_')===0){var auo=$('au_out');if(auo)auo.innerHTML=autCalc.apply(null,['au_k','au_h','au_d','au_t'].map(function(i){return parseNum($(i).value)}));return}
+  if(el.id&&el.id.indexOf('mh_')===0){var mho=$('mh_out');if(mho)mho.innerHTML=mhCalc.apply(null,['mh_q','mh_h','mh_e'].map(function(i){return parseNum($(i).value)}));return}
   if(el.id&&el.id.indexOf('hd_')===0){var hdo=$('hd_out');if(hdo)hdo.innerHTML=hidCalc.apply(null,['hd_n','hd_c','hd_p','hd_nu','hd_e'].map(function(i){return parseNum($(i).value)}));return}
   if(el.id&&el.id.indexOf('pz_')===0){var po=$('pz_out');if(po)po.innerHTML=pezCalc.apply(null,['pz_n','pz_g','pz_s','pz_p','pz_a','pz_f','pz_pi'].map(function(i){return parseNum($(i).value)}));return}
   if(el.id==='vc_n'||el.id==='vc_kgc'||el.id==='vc_pc'||el.id==='vc_kgv'||el.id==='vc_pv'||el.id==='vc_m'||el.id==='vc_a'){var vo=$('vc_out');if(vo)vo.innerHTML=vacCalc.apply(null,['vc_n','vc_kgc','vc_pc','vc_kgv','vc_pv','vc_m','vc_a'].map(function(i){return parseNum($(i).value)}));return}
