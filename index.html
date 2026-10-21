@@ -948,15 +948,153 @@ function vPeces(){
   h+='<section class="panel"><h2>Fuentes</h2><ul class="rules">'+FUE.map(function(f){return '<li><a href="'+f[1]+'" target="_blank" rel="noopener">'+esc(f[0])+'</a></li>'}).join('')+'</ul></section>';
   return h;
 }
+
+/* ---------- Guía de hidroponía ---------- */
+/* [cultivo, sistema sugerido, EC mS/cm, pH, nota]. EC y pH: Oklahoma State University Extension. Sistema y notas: criterio mío. */
+var HID_CULT=[
+ ['Hojas y hierbas',null],
+ ['Lechuga','Raft o NFT','1,2–1,8','6,0–7,0','El cultivo más fácil para empezar. Ciclo de 45–60 días desde el trasplante (CPDIA-TEC).'],
+ ['Espinaca','Raft o NFT','1,8–2,3','6,0–7,0','Prefiere temperaturas frescas.'],
+ ['Pak choi','Raft o NFT','1,5–2,0','7,0','Crece rápido.'],
+ ['Apio','NFT o raft','1,8–2,4','6,5','Ciclo más largo que la lechuga.'],
+ ['Albahaca','Raft o NFT','1,0–1,6','5,5–6,0','Hierba muy rentable y fácil. Sensible al frío.'],
+ ['Perejil','NFT o raft','1,8–2,2','6,0–6,5','Germina despacio.'],
+ ['Salvia','NFT o raft','1,0–1,6','5,5–6,5','Hierba aromática de buen precio.'],
+ ['Puerro','Sustrato o NFT','1,4–1,8','6,5–7,0','Ciclo largo.'],
+ ['Repollo','Sustrato con goteo','2,5–3,0','6,5–7,0','Planta grande, ciclo largo.'],
+ ['Brócoli','Sustrato con goteo','2,8–3,5','6,0–6,8','Planta grande, ciclo largo.'],
+ ['Cilantro, menta, rúcula','Raft o NFT','sin dato','sin dato','No aparecen en la tabla de la fuente. Se cultivan con los mismos sistemas que la albahaca; mide y ajusta con tu propia experiencia.'],
+ ['Frutos y legumbres',null],
+ ['Tomate','Goteo en sustrato (cubos o sacos)','2,0–4,0','6,0–6,5','Necesita tutor, poda y polinización. Más exigente que las hojas.'],
+ ['Pepino','Goteo en sustrato','1,7–2,0','5,0–5,5','Crece muy rápido y pide soporte vertical.'],
+ ['Pimiento','Goteo en sustrato','0,8–1,8','5,5–6,0','Ciclo largo y cosecha escalonada.'],
+ ['Berenjena','Goteo en sustrato','2,5–3,5','6,0','Planta grande que consume mucho.'],
+ ['Calabacín','Goteo en sustrato','1,8–2,4','6,0','Ocupa mucho espacio.'],
+ ['Frijol','Goteo en sustrato','2,0–4,0','6,0','Rango amplio de EC en la fuente.'],
+ ['Okra','Goteo en sustrato','2,0–2,4','6,5','Pide calor.'],
+ ['Fresa',  'Canalones elevados o torres','1,8–2,2','6,0','Cultivo de alto valor por kilo. Necesita clima fresco y control de enfermedades.']
+];
+var HID_NO=['Tubérculos y raíces (papa, zanahoria, yuca)','Cereales y maíz','Árboles frutales','Leguminosas de grano seco en volumen']; 
+var HID_SIST=[
+ ['Kratky (pasivo)','Un recipiente con solución y la planta con las raíces metidas, sin bomba ni electricidad.','Lechuga y hierbas pequeñas.','Cuesta casi nada y no necesita energía.','Solo para ciclos cortos; no sirve para cultivos grandes.','est'],
+ ['Raft o DWC (balsa flotante)','Las plantas flotan sobre una balsa en un tanque de solución aireada con una bomba de aire.','Lechuga, albahaca, espinaca, pak choi.','Muy estable: el gran volumen de agua amortigua cambios.','Necesita aireación continua; si se corta la luz, las raíces se asfixian.','est'],
+ ['NFT (película de nutrientes)','Una película fina de solución circula por canales o tubos con una ligera pendiente.','Hojas y hierbas.','Ahorra agua y espacio; es el sistema del manual del CPDIA.','Si falla la bomba, las plantas se secan en pocas horas.','fuente'],
+ ['Goteo en sustrato','Bolsas, cubos o macetas con sustrato inerte y riego por goteo.','Tomate, pepino, pimiento, berenjena, fresa.','Admite plantas grandes y soporte.','Más coste de sustrato y más manejo.','est'],
+ ['Torres verticales','Torres con orificios por las que cae la solución.','Fresa, lechuga, hierbas.','Muchas plantas en poca superficie.','Riego desigual arriba y abajo; coste por planta mayor.','est'],
+ ['Aeroponía','Las raíces cuelgan en el aire y reciben la solución en niebla.','Hojas y hierbas.','Crecimiento rápido.','Equipo caro y exigente; no es para empezar.','est']
+];
+var HID_HOAG=[
+ ['KNO₃ (nitrato de potasio)','202 g/L (solución 2 M)','2,5 mL por litro final'],
+ ['Ca(NO₃)₂·4H₂O (nitrato de calcio)','472 g/L (2 M)','2,5 mL por litro final'],
+ ['MgSO₄·7H₂O (sulfato de magnesio)','493 g/L (2 M)','1 mL por litro final'],
+ ['KH₂PO₄ (fosfato monopotásico)','136 g/L (1 M)','1 mL por litro final'],
+ ['Micronutrientes: H₃BO₃ 2,86 g/L, MnCl₂·4H₂O 1,81 g/L, ZnSO₄·7H₂O 0,22 g/L, CuSO₄·5H₂O 0,08 g/L, molibdato 0,09 g/L','por separado','1 mL de cada por litro final'],
+ ['Hierro quelado','según el producto','1–1,5 mL por litro final']
+];
+var HID_PASOS=[
+ ['Define el objetivo y la escala','Empieza para ti y tu familia con 20 a 50 plantas. Vender es otro paso: antes necesitas saber cuántas plantas manejas bien, cuántas horas al día te lleva y a qué precio venden tus compradores.'],
+ ['Elige uno o dos cultivos','Lechuga y albahaca son los más fáciles. Los frutos (tomate, pepino) piden más manejo y más inversión. No empieces con seis cultivos distintos.'],
+ ['Elige el lugar','Necesitas luz solar directa o iluminación artificial, un piso nivelado, agua limpia, electricidad segura y temperatura moderada. Para la lechuga el manual del CPDIA indica 15 a 25 °C en el ambiente y la solución preferiblemente por debajo de 20 °C. Con calor fuerte, usa sombra o cubierta.'],
+ ['Elige el sistema','Empieza con raft o NFT pequeño para hojas. Pasa a goteo en sustrato solo cuando domines lo básico. Evita aeroponía al principio.'],
+ ['Analiza el agua','Mide pH, EC y alcalinidad antes de empezar. La fuente de Oklahoma State fija estos límites orientativos: sodio por debajo de 50 ppm, calcio por debajo de 150 ppm, cloruro por debajo de 140 ppm y sulfato por debajo de 100 ppm. Si la alcalinidad supera 75 ppm, el pH sube y hay que bajarlo con ácido (fosfórico, cítrico o vinagre) o con ósmosis inversa.'],
+ ['Construye el sistema','Tanque cubierto contra la luz, bomba con temporizador, canales o balsas sin fugas y un plan para cuando falle la electricidad. Haz pruebas con agua sola antes de poner plantas.'],
+ ['Germina las plántulas','Siembra en esponja o sustrato inerte, con humedad y luz suave, y trasplanta cuando tengan raíces visibles y hojas verdaderas. Es una pauta general mía, sin fuente.'],
+ ['Prepara la solución nutritiva','Usa un fertilizante hidropónico comercial siguiendo la etiqueta, o prepara dos soluciones (A y B) como las de la sección de composiciones. Ajusta primero la EC y después el pH.'],
+ ['Maneja el cultivo','Mide pH y EC cada día a la misma hora. Para lechuga en NFT el CPDIA propone EC de máximo 1,2 al trasplante, hasta 1,5 durante el desarrollo y hasta 1,8 la última semana, con pH cerca de 6. Cambia la solución completa cada dos semanas.'],
+ ['Cosecha y vende','La lechuga se cosecha entre 45 y 60 días tras el trasplante. En las pruebas del CPDIA, a los 49 días pesaba 217 g. Vende fresca, con la raíz si es posible, y ofrece cajas de hierbas a restaurantes y mercados locales.']
+];
+var HID_ES={mon:'€',n:200,c:6,p:1.2,nut:0.1,elec:15,
+ partidas:[
+  ['Canales, tubos o recipientes para las plantas (por planta)','planta',1,1,3,'est'],
+  ['Esponjas, canastillas, semillas (por planta)','planta',1,0.2,0.6,'est'],
+  ['Tanque reservorio cubierto','fijo',1,30,120,'est'],
+  ['Bomba, mangueras y temporizador','fijo',40,60,200,'est'],
+  ['Bomba de aire y difusores (para raft)','fijo',1,20,60,'est'],
+  ['Medidores de pH y EC, y soluciones de calibración','fijo',1,40,150,'est'],
+  ['Sales nutritivas del primer mes','fijo',1,30,100,'est'],
+  ['Cubierta tipo mini invernadero con sombra','fijo',200,300,1500,'est'],
+  ['Invernadero con estructura (si es fija, requiere permiso de obra)','fijo',1000,4000,15000,'est']
+ ]};
+var HID_CO={mon:'COP',n:200,c:6,p:2500,nut:400,elec:60000,
+ partidas:[
+  ['Canales, tubos o recipientes para las plantas (por planta)','planta',1,4500,13500,'est'],
+  ['Esponjas, canastillas, semillas (por planta)','planta',1,900,2700,'est'],
+  ['Tanque reservorio cubierto','fijo',1,135000,540000,'est'],
+  ['Bomba, mangueras y temporizador','fijo',40,270000,900000,'est'],
+  ['Bomba de aire y difusores (para raft)','fijo',1,90000,270000,'est'],
+  ['Medidores de pH y EC, y soluciones de calibración','fijo',1,180000,675000,'est'],
+  ['Sales nutritivas del primer mes','fijo',1,135000,450000,'est'],
+  ['Cubierta tipo mini invernadero con sombra','fijo',200,1350000,6750000,'est'],
+  ['Invernadero con estructura','fijo',1000,18000000,67500000,'est']
+ ]};
+var HID_LEGAL_ES=[
+ ['Serre mobili','Una serra desmontable, sin cimentación ni obra de fábrica en el suelo, se considera edilizia libera según el artículo de Pagliai (2018). Una serra anclada a una losa de hormigón requiere permesso di costruire.'],
+ ['Terreno no edificable','Una zona no edificable no impide por sí misma una serra mobile, pero cada región y Comune regula su zona agrícola. Consulta en el ufficio tecnico y, si hay vínculo paesaggistico, en la Soprintendenza.'],
+ ['Venta de hortalizas','Sin verificar: qué alta de actividad (partita IVA, registro agrícola) y qué notificación sanitaria necesitas para vender verduras frescas. Pregunta a un commercialista y al SUAP de tu Comune.'],
+ ['Agua','Sin verificar: si captas agua de un pozo, pregunta qué denuncia o concesión necesitas.']
+];
+var HID_LEGAL_CO=[
+ ['BPA (ICA)','La Res. ICA 30021 de 2017 permite certificar el predio en Buenas Prácticas Agrícolas, a solicitud del productor. La certificación dura dos años, exige análisis de agua al menos una vez al año, trazabilidad por lote y fecha de cosecha, y registros guardados dos años.'],
+ ['Documentos de la BPA','Solicitud con identificación, prueba de propiedad, posesión o tenencia, asistencia de un agrónomo, croquis del predio, certificado de uso del suelo y permiso de uso de aguas cuando aplique.'],
+ ['Venta de hortalizas frescas','Sin verificar: requisitos sanitarios para vender verduras desde una finca pequeña. Consulta en la Secretaría de Salud y el ICA.'],
+ ['Agua','Si usas agua de una fuente superficial, la autoridad ambiental (en Antioquia, Corantioquia, Cornare o Corpourabá) puede exigir concesión. Confirma con la tuya.']
+];
+var HID_FUENTES=[
+ ['EC y pH por cultivo, Oklahoma State University Extension','https://extension.okstate.edu/fact-sheets/electrical-conductivity-and-ph-guide-for-hydroponics.html'],
+ ['Solución de Hoagland (composición)','https://en.wikipedia.org/wiki/Hoagland_solution'],
+ ['Manual de producción hidropónica de hortalizas de hoja en NFT (CPDIA-TEC, Costa Rica)','https://repositoriotec.tec.ac.cr/bitstream/handle/2238/6581/manual-hidroponia-NFT.pdf'],
+ ['Serre mobili stagionali: permesso o edilizia libera (Pagliai, 2018)','https://www.studiotecnicopagliai.it/serre-mobili-stagionali-tra-permesso-o-edilizia-libera/'],
+ ['Resolución ICA 30021 de 2017 (BPA)','https://normograma.invima.gov.co/normograma/docs/pdf/resolucion_ica_30021_2017.pdf']
+];
+function hidD(){return S.lib.pais==='Colombia'?HID_CO:HID_ES}
+function hidCalc(n,c,p,nu,el){
+  var D=hidD();n=Math.max(0,Math.round(n||0));c=Math.max(0,c||0);p=Math.max(0,p||0);nu=Math.max(0,nu||0);el=Math.max(0,el||0);
+  function m(x){return fmt(Math.round(x*100)/100)+' '+D.mon}
+  var lo=0,hi=0,rows=[];
+  D.partidas.forEach(function(r){
+    if(n<r[2])return;
+    if(n>=1000&&/^Cubierta/.test(r[0]))return;
+    var k=r[1]==='planta'?n:1;lo+=r[3]*k;hi+=r[4]*k;
+    rows.push('<tr><td>'+esc(r[0])+' '+tagFuente(r[5])+'</td><td class="mono">'+fmt(Math.round(r[3]*k))+' – '+fmt(Math.round(r[4]*k))+' '+D.mon+'</td></tr>');
+  });
+  var ing=n*c*p,gas=n*c*nu+el*12,net=ing-gas;
+  var back=net>0?((lo+hi)/2/net):null;
+  return '<div class="tablewrap"><table class="cost">'+rows.join('')+'<tr class="tot"><td>Inversión inicial ('+fmt(n)+' plantas)</td><td>'+m(lo)+' – '+m(hi)+'</td></tr></table></div>'+
+   '<p class="live-top"><span><b>Ingreso bruto al año:</b> '+m(ing)+' ('+fmt(n)+' plantas × '+c+' ciclos × '+fmt(p)+' '+D.mon+'). <b>Nutrientes, electricidad y agua:</b> '+m(gas)+'. <b>Queda:</b> '+m(net)+' antes de mano de obra, mermas y reposición de equipos.'+(back?' Con ese resultado, recuperar la inversión media tardaría unos '+(Math.round(back*10)/10)+' años.':'')+'</span></p>';
+}
+function vHidro(){
+  var co=S.lib.pais==='Colombia',D=hidD(),LEG=co?HID_LEGAL_CO:HID_LEGAL_ES;
+  var h='<section class="panel"><h2>Hidroponía: de cero a la primera cosecha</h2><div class="chips"><button class="chip" data-act="libpais" data-v="Italia" aria-pressed="'+(!co)+'">Italia</button><button class="chip" data-act="libpais" data-v="Colombia" aria-pressed="'+co+'">Colombia</button></div>'+
+   '<p class="muted">Cultivar sin suelo, con las raíces en agua con nutrientes. Sirve en una parcela pequeña o incluso con tierra poco fértil, pero depende de la electricidad, el agua limpia y el manejo diario. '+(co?'En Antioquia, las alturas templadas o frías son más cómodas para la lechuga que el clima cálido, donde habría que dar sombra y enfriar la solución.':'En el centro de Italia, el verano caliente obliga a dar sombra y a vigilar la temperatura de la solución, y el invierno puede exigir calefacción.')+'</p>'+
+   '<p class="hint">Los valores de EC, pH, composiciones y tiempos de cultivo vienen de las fuentes citadas al final. Los costos, precios y la elección de sistemas son <b>estimaciones mías</b> sin fuente.</p></section>';
+  h+='<section class="panel"><h2>Qué alimentos puedes cultivar</h2><p class="muted">EC (conductividad eléctrica, en mS/cm) y pH recomendados por cultivo, según Oklahoma State University Extension. La columna de sistema es mi sugerencia.</p><div class="tablewrap"><table><thead><tr><th>Cultivo</th><th>Sistema</th><th>EC</th><th>pH</th><th>Nota</th></tr></thead><tbody>'+
+   HID_CULT.map(function(r){return r[1]===null?'<tr><th colspan="5">'+esc(r[0])+'</th></tr>':'<tr><td><b>'+esc(r[0])+'</b></td><td>'+esc(r[1])+'</td><td class="mono">'+esc(r[2])+'</td><td class="mono">'+esc(r[3])+'</td><td>'+esc(r[4])+'</td></tr>'}).join('')+
+   '</tbody></table></div><p class="hint"><b>No recomendados en hidroponía casera:</b> '+HID_NO.map(esc).join('; ')+'. Es una pauta mía: ocupan mucho espacio o dan poco valor por metro cuadrado.</p></section>';
+  h+='<section class="panel"><h2>Sistemas hidropónicos</h2><div class="tablewrap"><table><thead><tr><th>Sistema</th><th>Cómo funciona</th><th>Para qué</th><th>Ventaja</th><th>Límite</th></tr></thead><tbody>'+
+   HID_SIST.map(function(r){return '<tr><td><b>'+esc(r[0])+'</b> '+tagFuente(r[5])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td>'+esc(r[3])+'</td><td>'+esc(r[4])+'</td></tr>'}).join('')+'</tbody></table></div></section>';
+  h+='<section class="panel"><h2>Paso a paso</h2><ol class="steps">'+HID_PASOS.map(function(x){return '<li><b>'+esc(x[0])+'.</b> '+esc(x[1])+'</li>'}).join('')+'</ol></section>';
+  h+='<section class="panel"><h2>Composición de la solución nutritiva</h2>'+
+   '<h3 class="sh">Receta de Hoagland (solución completa)</h3><p class="muted">Se hacen soluciones madre concentradas y se añaden al agua. Concentraciones finales aproximadas de la fuente: nitrógeno 210 ppm, fósforo 31, azufre 64, magnesio 48,6, potasio 235 y calcio 160–200. Alta en nitrógeno y potasio, por eso es adecuada para tomate y pimiento. Para plantas de menor demanda, como la lechuga, se diluye a un cuarto o un quinto.</p>'+
+   '<div class="tablewrap"><table><thead><tr><th>Sal / elemento</th><th>Solución madre</th><th>Dosis</th></tr></thead><tbody>'+HID_HOAG.map(function(r){return '<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td></tr>'}).join('')+'</tbody></table></div>'+
+   '<h3 class="sh">Receta para lechuga en NFT (CPDIA-TEC)</h3><p class="muted">Dos soluciones concentradas. Solución A (para 10 L de agua): fosfato monoamónico 340 g, nitrato de calcio 2.080 g, nitrato de potasio 1.100 g. Solución B (para 2 L de agua): sulfato de magnesio 220 g, quelato de hierro unos 4 g (12 mL de metalosato de hierro), Fetrilon Combi 1 12 g, ácido bórico 1,2 g. Al trasplante se usan 2,5 mL de A y 1 mL de B por litro de agua, hasta llegar a 1,2 mS/cm como máximo.</p>'+
+   '<p class="hint">Nunca mezcles las soluciones A y B concentradas entre sí: el calcio y los fosfatos o sulfatos precipitan. Es una precaución general mía; la fuente las prepara por separado. Pesa con una balanza precisa y usa guantes y gafas.</p>'+
+   '<h3 class="sh">Parámetros de manejo</h3><ul class="rules"><li><b>pH:</b> la solución debe estar entre 5 y 6, idealmente cerca de 5,5, según Oklahoma State; el CPDIA usa cerca de 6 para lechuga.</li><li><b>EC:</b> ajústala primero y el pH después. Calibra el medidor con solución patrón (normalmente 1,41 mS/cm).</li><li><b>Temperatura de la solución:</b> Oklahoma State indica 22–24 °C como óptima; el CPDIA recomienda que la lechuga no pase de 20 °C.</li><li><b>Renovación:</b> sustituye la solución entera cada dos semanas, porque las proporciones de nutrientes cambian.</li><li><b>Circulación en NFT:</b> el CPDIA usa 15 minutos encendido y 45 apagado el primer día, y luego 30 y 30.</li></ul></section>';
+  h+='<section class="panel"><h2>Presupuesto y retorno ('+(co?'Colombia, en COP':'Italia, en euros')+')</h2><p class="muted">Ejemplo con lechuga. Cambia el número de plantas para ver la inversión de cada escala: con 40 plantas aparece la bomba, con 200 la cubierta y con 1.000 el invernadero.</p><div class="calc"><label class="fld"><span>Plantas</span><input type="text" inputmode="numeric" id="hd_n" value="'+D.n+'"></label><label class="fld"><span>Ciclos al año</span><input type="text" inputmode="numeric" id="hd_c" value="'+D.c+'"></label><label class="fld"><span>Precio por planta ('+D.mon+')</span><input type="text" inputmode="decimal" id="hd_p" value="'+D.p+'"></label><label class="fld"><span>Nutrientes por planta y ciclo ('+D.mon+')</span><input type="text" inputmode="decimal" id="hd_nu" value="'+D.nut+'"></label><label class="fld"><span>Electricidad y agua al mes ('+D.mon+')</span><input type="text" inputmode="decimal" id="hd_e" value="'+D.elec+'"></label></div><div id="hd_out">'+hidCalc(D.n,D.c,D.p,D.nut,D.elec)+'</div></section>';
+  h+='<section class="panel"><h2>Qué dice la ley</h2><ul class="rules">'+LEG.map(function(x){return '<li><b>'+esc(x[0])+':</b> '+esc(x[1])}).join('</li>')+'</li></ul><p class="hint">Resumen de las fuentes citadas, sin valor de asesoría legal. '+(co?'Confirma con el ICA y la alcaldía.':'Confirma con el ufficio tecnico y el SUAP de tu Comune.')+'</p></section>';
+  h+='<section class="panel"><h2>Errores comunes de quien empieza</h2><ul class="rules"><li>Empezar con tomate o fresa sin dominar antes una lechuga.</li><li>No medir pH ni EC a diario.</li><li>Dejar la solución al sol o al calor: sube la temperatura y aparecen algas y enfermedades.</li><li>No tener un plan para un corte de electricidad.</li><li>Calcular el precio de venta sin contar la electricidad, los nutrientes y tu tiempo.</li><li>Mezclar sales concentradas de calcio con fosfatos o sulfatos.</li></ul></section>';
+  h+='<section class="panel"><h2>Fuentes</h2><ul class="rules">'+HID_FUENTES.map(function(f){return '<li><a href="'+f[1]+'" target="_blank" rel="noopener">'+esc(f[0])+'</a></li>'}).join('')+'</ul></section>';
+  return h;
+}
 function vBiblioteca(){
   var D=apiD(),co=S.lib.pais==='Colombia',PASOS=co?PASOS_CO:PASOS_ES,LEG=co?LEGAL_CO:LEGAL_ES,FUE=co?FUENTES_CO:FUENTES_ES;
   var h='<div class="stack">';
   h+='<section class="panel"><h2>Biblioteca de autosuficiencia</h2><p class="muted">Guías para producir tu propia comida y generar ingresos con la tierra. Cada guía trae pasos, presupuesto, calendario y fuentes.</p>'+
-   '<div class="chips"><button class="chip" data-act="libguia" data-v="apiario" aria-pressed="'+(S.lib.guia!=='gallinas'&&S.lib.guia!=='cerdos'&&S.lib.guia!=='vacas'&&S.lib.guia!=='peces')+'">Apiario</button><button class="chip" data-act="libguia" data-v="gallinas" aria-pressed="'+(S.lib.guia==='gallinas')+'">Gallinas</button><button class="chip" data-act="libguia" data-v="cerdos" aria-pressed="'+(S.lib.guia==='cerdos')+'">Cerdos</button><button class="chip" data-act="libguia" data-v="vacas" aria-pressed="'+(S.lib.guia==='vacas')+'">Vacas</button><button class="chip" data-act="libguia" data-v="peces" aria-pressed="'+(S.lib.guia==='peces')+'">Piscicultura</button>'+['Hidroponía','Comparativa'].map(function(x){return '<button class="chip" disabled style="opacity:.55;cursor:not-allowed">'+x+' · próximamente</button>'}).join('')+'</div></section>';
+   '<div class="chips"><button class="chip" data-act="libguia" data-v="apiario" aria-pressed="'+(S.lib.guia!=='gallinas'&&S.lib.guia!=='cerdos'&&S.lib.guia!=='vacas'&&S.lib.guia!=='peces'&&S.lib.guia!=='hidro')+'">Apiario</button><button class="chip" data-act="libguia" data-v="gallinas" aria-pressed="'+(S.lib.guia==='gallinas')+'">Gallinas</button><button class="chip" data-act="libguia" data-v="cerdos" aria-pressed="'+(S.lib.guia==='cerdos')+'">Cerdos</button><button class="chip" data-act="libguia" data-v="vacas" aria-pressed="'+(S.lib.guia==='vacas')+'">Vacas</button><button class="chip" data-act="libguia" data-v="peces" aria-pressed="'+(S.lib.guia==='peces')+'">Piscicultura</button><button class="chip" data-act="libguia" data-v="hidro" aria-pressed="'+(S.lib.guia==='hidro')+'">Hidroponía</button>'+['Comparativa'].map(function(x){return '<button class="chip" disabled style="opacity:.55;cursor:not-allowed">'+x+' · próximamente</button>'}).join('')+'</div></section>';
   if(S.lib.guia==='gallinas')return h+vGallinas()+'</div>';
   if(S.lib.guia==='cerdos')return h+vCerdos()+'</div>';
   if(S.lib.guia==='vacas')return h+vVacas()+'</div>';
   if(S.lib.guia==='peces')return h+vPeces()+'</div>';
+  if(S.lib.guia==='hidro')return h+vHidro()+'</div>';
   h+='<section class="panel"><h2>Apiario: de cero a la primera cosecha</h2><div class="chips"><button class="chip" data-act="libpais" data-v="Italia" aria-pressed="'+(!co)+'">Italia</button><button class="chip" data-act="libpais" data-v="Colombia" aria-pressed="'+co+'">Colombia</button></div>'+
    '<dl class="figs"><div><dt>Colmenas para empezar</dt><dd>2 a 4</dd><span class="sub">hasta 8 con experiencia</span></div><div><dt>Miel por colmena</dt><dd>'+(co?'~40 kg':'20–30 kg')+'</dd><span class="sub">'+(co?'según datos de Antioquia':'hasta 40–50 kg un buen año')+'</span></div><div><dt>Inversión (4 colmenas)</dt><dd>'+(function(){var c=calcPresu(D,4);return fmt(c.lo)+'–'+fmt(c.hi)+' '+D.mon})()+'</dd></div></dl>'+
    '<p class="muted">'+(co?'Colombia no tiene invierno: las abejas están activas todo el año y la cosecha depende de las floraciones y de las lluvias de tu zona. La abeja africanizada rinde bien pero es defensiva. Fedeabejas calcula que la miel nacional cubre entre el 20% y el 30% de la demanda.':'Una hectárea sobra para un apiario: las abejas buscan néctar en un radio de unos 3 km, y además polinizan frutales, hortalizas y aromáticas de tu terreno. El avellano no, porque se poliniza con el viento.')+'</p></section>';
@@ -1335,6 +1473,7 @@ document.addEventListener('change',function(e){
 });
 document.addEventListener('input',function(e){
   var el=e.target;
+  if(el.id&&el.id.indexOf('hd_')===0){var hdo=$('hd_out');if(hdo)hdo.innerHTML=hidCalc.apply(null,['hd_n','hd_c','hd_p','hd_nu','hd_e'].map(function(i){return parseNum($(i).value)}));return}
   if(el.id&&el.id.indexOf('pz_')===0){var po=$('pz_out');if(po)po.innerHTML=pezCalc.apply(null,['pz_n','pz_g','pz_s','pz_p','pz_a','pz_f','pz_pi'].map(function(i){return parseNum($(i).value)}));return}
   if(el.id==='vc_n'||el.id==='vc_kgc'||el.id==='vc_pc'||el.id==='vc_kgv'||el.id==='vc_pv'||el.id==='vc_m'||el.id==='vc_a'){var vo=$('vc_out');if(vo)vo.innerHTML=vacCalc.apply(null,['vc_n','vc_kgc','vc_pc','vc_kgv','vc_pv','vc_m','vc_a'].map(function(i){return parseNum($(i).value)}));return}
   if(el.id==='cd_n'||el.id==='cd_kg'||el.id==='cd_p'||el.id==='cd_l'||el.id==='cd_pi'){var co2=$('cd_out');if(co2)co2.innerHTML=cerCalc(parseNum($('cd_n').value),parseNum($('cd_kg').value),parseNum($('cd_p').value),parseNum($('cd_l').value),parseNum($('cd_pi').value));return}
