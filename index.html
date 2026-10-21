@@ -789,13 +789,90 @@ function vCerdos(){
   h+='<section class="panel"><h2>Fuentes</h2><ul class="rules">'+FUE.map(function(f){return '<li><a href="'+f[1]+'" target="_blank" rel="noopener">'+esc(f[0])+'</a></li>'}).join('')+'</ul></section>';
   return h;
 }
+
+/* ---------- Guía de vacas ---------- */
+var VAC_ES={mon:'€',n:2,kgc:250,pc:3,kgv:550,pv:2.5,meses:14,alim:40,
+ partidas:[
+  ['Cerca fuerte (eléctrica o de postes) y puerta','fijo',1,300,1200,'est'],
+  ['Refugio o cobertizo abierto contra viento y lluvia','fijo',1,500,2500,'est'],
+  ['Bebedero con agua corriente y comedero de heno','fijo',1,100,400,'est'],
+  ['Manga o corral de manejo para el veterinario','fijo',1,200,1000,'est']
+ ]};
+var VAC_CO={mon:'COP',n:4,kgc:200,pc:9500,kgv:450,pv:8000,meses:18,alim:25000,
+ partidas:[
+  ['Cercas con postes y alambre de púas o eléctrica','fijo',1,2000000,8000000,'est'],
+  ['Saladero y bebederos','fijo',1,300000,1200000,'est'],
+  ['Corral y brete de manejo','fijo',1,1500000,6000000,'est'],
+  ['Sombrío (árboles o ramadas) y fuente de agua','fijo',1,500000,3000000,'est']
+ ]};
+var VAC_PASOS_ES=[
+ ['Calcula qué cabe en tu terreno','Una hectárea mantiene pocas cabezas y la cantidad depende del pasto y de la lluvia. Pide a un agrónomo local que estime cuántas vacas puede alimentar tu parcela todo el año sin comprar demasiado heno.'],
+ ['Elige entre autoconsumo o negocio','En el ejemplo de formulario de la ASL de Chieti (Abruzzo), el allevamento familiare bovino admite como máximo 3 animales de la especie Bos taurus, para engorde y sin reproducción, y es para autoconsumo o uso doméstico privado. Cada ASL tiene su formulario: confirma el límite en la de Viterbo.'],
+ ['Regístrate en la BDN','El registro se presenta a la ASL (Servicio Veterinario) y a través del SUAP del Comune. Pide la solicitud de registro (Modello 00), la ficha de bovinos, una planimetría, una descripción de la actividad con establos, platea y gestión de efluentes, y las especificaciones técnicas del equipamiento.'],
+ ['Identifica y registra a los animales','Los bovinos se identifican individualmente y los movimientos se registran en la BDN. Pregunta a la ASL los plazos y el procedimiento: la ficha que revisé no los detalla.'],
+ ['Prepara el agua, la cerca y el refugio','El agua limpia todo el año y la cerca fuerte son lo primero. En invierno necesitas heno y refugio contra viento.'],
+ ['Empieza con pocos animales','Dos o tres terneros de engorde te enseñan el oficio con poco riesgo. Una vaca lechera añade ordeño diario, y vender leche cruda es otra categoría de registro.'],
+ ['Lleva los registros','Anota compras, ventas, sanidad y alimentación. Sin esa información no sabrás si ganas dinero.']
+];
+var VAC_PASOS_CO=[
+ ['Calcula la capacidad de carga','Cuántas reses cabe en una hectárea depende del pasto, el clima y la época de lluvias. Pide a la UMATA o a un zootecnista estimarlo para tu zona y piso térmico.'],
+ ['Registra el predio ante el ICA','El Registro Sanitario de Predio Pecuario (Res. ICA 090464 de 2021) pide cédula, RUT o NIT, ubicación del predio con su extensión en hectáreas y, para bovinos, la marca o el padrón de hierro.'],
+ ['Vacuna contra fiebre aftosa y brucelosis','El titular debe vacunar y permitir la vacunación de todos los animales según los programas del ICA. Averigua con tu oficina local las fechas de los ciclos y quién vacuna en tu vereda.'],
+ ['Moviliza con guía sanitaria','Para mover animales necesitas la Guía Sanitaria de Movilización Interna, a la que habilita el registro.'],
+ ['Elige el modelo','Ceba (comprar terneros y engordar), cría (hembras y terneros) o doble propósito. Una hectárea sola mantiene pocas cabezas: empieza con ceba o con pocas vacas.'],
+ ['Mejora potreros y agua','Divide los potreros para rotar, siembra pasto adecuado al piso térmico y asegura agua y sal todo el año.'],
+ ['Lleva los registros','Anota compras, peso, vacunas, ventas y gastos. Es la base para saber si el negocio rinde.']
+];
+var VAC_LEGAL_ES=[
+ ['Familiare','Ejemplo de la ASL de Chieti: máximo 3 bovinos Bos taurus, para engorde, sin reproducción, para autoconsumo.'],
+ ['Registro','A la ASL (Servicio Veterinario) y al SUAP. Titular mayor de 18 años.'],
+ ['Documentos','Modello 00, ficha de bovinos, planimetría, relación de la actividad y especificaciones técnicas.'],
+ ['Orientación productiva','Existen categorías de carne, leche y mixto para la actividad comercial.'],
+ ['Sin verificar','Identificación individual y movimientos: consulta a la ASL, porque la ficha que revisé no los detalla.']
+];
+var VAC_LEGAL_CO=[
+ ['Registro sanitario del predio','Res. ICA 090464 de 2021. Aplica a bovinos y otras especies. Es solo sanitario y no prueba propiedad.'],
+ ['Vacunación','Obligatoria para toda la hacienda según los programas del ICA (fiebre aftosa y brucelosis). La resolución no fija fechas ni ciclos.'],
+ ['Control','Los funcionarios del ICA son inspectores de policía sanitaria y pueden entrar al predio.'],
+ ['Sanciones','Por incumplimiento, según la Ley 1955 de 2019, arts. 156 y 157.'],
+ ['Terceros autorizados','Cada tercero puede responder máximo por tres titulares.']
+];
+var VAC_FUENTES_ES=[
+ ['Registro de establecimiento bovino, ASL 02 Abruzzo (ejemplo)','https://www.asl2abruzzo.it/wp-content/uploads/2026/02/Mod_00_Scheda_Allev_Registrazione.pdf'],
+ ['Registro de allevamento familiare, ASL Viterbo','https://www.asl.vt.it/storage/uploads/forms/25573a635db3edcdf822092efad52d72.pdf']
+];
+var VAC_FUENTES_CO=[
+ ['Resolución ICA 090464 de 2021 (Registro Sanitario de Predio Pecuario)','https://www.ica.gov.co/getattachment/74c359e3-9201-4db9-849f-98ab5a9e2d0b/2021R90464.aspx']
+];
+function vacD(){return S.lib.pais==='Colombia'?VAC_CO:VAC_ES}
+function vacCalc(n,kgc,pc,kgv,pv,mes,al){
+  var D=vacD();n=Math.max(0,Math.round(n||0));[kgc,pc,kgv,pv,mes,al].forEach(function(){});kgc=Math.max(0,kgc||0);pc=Math.max(0,pc||0);kgv=Math.max(0,kgv||0);pv=Math.max(0,pv||0);mes=Math.max(0,mes||0);al=Math.max(0,al||0);
+  function m(x){return fmt(Math.round(x))+' '+D.mon}
+  var lo=0,hi=0,rows=D.partidas.map(function(r){lo+=r[3];hi+=r[4];return '<tr><td>'+esc(r[0])+' '+tagFuente(r[5])+'</td><td class="mono">'+fmt(r[3])+' – '+fmt(r[4])+' '+D.mon+'</td></tr>'}).join('');
+  var compra=n*kgc*pc,alim=n*mes*al,venta=n*kgv*pv,res=venta-compra-alim;
+  return '<div class="tablewrap"><table class="cost">'+rows+'<tr class="tot"><td>Instalaciones (una vez)</td><td>'+m(lo)+' – '+m(hi)+'</td></tr></table></div>'+
+   '<p class="live-top"><span><b>Por ciclo de '+n+' animales ('+mes+' meses):</b> compra '+m(compra)+' + alimentación '+m(alim)+'. <b>Venta:</b> '+m(venta)+'. <b>Diferencia:</b> '+m(res)+' antes de sanidad, agua, mortalidad y transporte.</span></p>';
+}
+function vVacas(){
+  var co=S.lib.pais==='Colombia',D=vacD(),PASOS=co?VAC_PASOS_CO:VAC_PASOS_ES,LEG=co?VAC_LEGAL_CO:VAC_LEGAL_ES,FUE=co?VAC_FUENTES_CO:VAC_FUENTES_ES;
+  var h='<section class="panel"><h2>Vacas: de cero al primer ciclo</h2><div class="chips"><button class="chip" data-act="libpais" data-v="Italia" aria-pressed="'+(!co)+'">Italia</button><button class="chip" data-act="libpais" data-v="Colombia" aria-pressed="'+co+'">Colombia</button></div>'+
+   '<p class="muted">'+(co?'La ganadería es una actividad tradicional en Colombia. Con una hectárea la escala es muy pequeña: la ceba de pocos animales es lo más realista para empezar.':'En Italia, el allevamento familiare bovino es muy pequeño y es solo para autoconsumo. Para vender carne o leche, el registro es otro y conviene hablar con la ASL antes de comprar nada.')+'</p>'+
+   '<p class="hint">Los costos, pesos y precios de esta guía son <b>estimaciones mías</b> sin fuente: ajústalos con datos reales de tu zona. Solo los datos legales vienen de las fuentes citadas.</p></section>';
+  h+='<section class="panel"><h2>Paso a paso</h2><ol class="steps">'+PASOS.map(function(x){return '<li><b>'+esc(x[0])+'.</b> '+esc(x[1])+'</li>'}).join('')+'</ol></section>';
+  h+='<section class="panel"><h2>Presupuesto y ciclo de engorde ('+(co?'Colombia, en COP':'Italia, en euros')+')</h2><div class="calc"><label class="fld"><span>Animales</span><input type="text" inputmode="numeric" id="vc_n" value="'+D.n+'"></label><label class="fld"><span>Peso al comprar (kg)</span><input type="text" inputmode="numeric" id="vc_kgc" value="'+D.kgc+'"></label><label class="fld"><span>Precio compra por kg ('+D.mon+')</span><input type="text" inputmode="decimal" id="vc_pc" value="'+D.pc+'"></label><label class="fld"><span>Peso al vender (kg)</span><input type="text" inputmode="numeric" id="vc_kgv" value="'+D.kgv+'"></label><label class="fld"><span>Precio venta por kg ('+D.mon+')</span><input type="text" inputmode="decimal" id="vc_pv" value="'+D.pv+'"></label><label class="fld"><span>Meses del ciclo</span><input type="text" inputmode="numeric" id="vc_m" value="'+D.meses+'"></label><label class="fld"><span>Alimentación extra por animal y mes ('+D.mon+')</span><input type="text" inputmode="decimal" id="vc_a" value="'+D.alim+'"></label></div><div id="vc_out">'+vacCalc(D.n,D.kgc,D.pc,D.kgv,D.pv,D.meses,D.alim)+'</div></section>';
+  h+='<section class="panel"><h2>Qué dice la ley</h2><ul class="rules">'+LEG.map(function(x){return '<li><b>'+esc(x[0])+':</b> '+esc(x[1])}).join('</li>')+'</li></ul><p class="hint">Resumen de las fuentes citadas, sin valor de asesoría legal. '+(co?'Confirma con el ICA y la alcaldía.':'Los formularios son de la ASL de Chieti (Abruzzo): confirma con la ASL de Viterbo.')+'</p></section>';
+  h+='<section class="panel"><h2>Errores comunes de quien empieza</h2><ul class="rules"><li>Comprar más animales de los que el pasto y el agua aguantan.</li><li>No calcular la alimentación de la época seca o del invierno.</li><li>Cercas débiles: las reses se escapan o el ganado ajeno entra.</li><li>Empezar sin registro del predio ni vacunación al día.</li><li>Olvidar el costo de sanidad, transporte y mortalidad en las cuentas.</li></ul></section>';
+  h+='<section class="panel"><h2>Fuentes</h2><ul class="rules">'+FUE.map(function(f){return '<li><a href="'+f[1]+'" target="_blank" rel="noopener">'+esc(f[0])+'</a></li>'}).join('')+'</ul></section>';
+  return h;
+}
 function vBiblioteca(){
   var D=apiD(),co=S.lib.pais==='Colombia',PASOS=co?PASOS_CO:PASOS_ES,LEG=co?LEGAL_CO:LEGAL_ES,FUE=co?FUENTES_CO:FUENTES_ES;
   var h='<div class="stack">';
   h+='<section class="panel"><h2>Biblioteca de autosuficiencia</h2><p class="muted">Guías para producir tu propia comida y generar ingresos con la tierra. Cada guía trae pasos, presupuesto, calendario y fuentes.</p>'+
-   '<div class="chips"><button class="chip" data-act="libguia" data-v="apiario" aria-pressed="'+(S.lib.guia!=='gallinas'&&S.lib.guia!=='cerdos')+'">Apiario</button><button class="chip" data-act="libguia" data-v="gallinas" aria-pressed="'+(S.lib.guia==='gallinas')+'">Gallinas</button><button class="chip" data-act="libguia" data-v="cerdos" aria-pressed="'+(S.lib.guia==='cerdos')+'">Cerdos</button>'+['Hidroponía','Piscicultura','Vacas','Comparativa'].map(function(x){return '<button class="chip" disabled style="opacity:.55;cursor:not-allowed">'+x+' · próximamente</button>'}).join('')+'</div></section>';
+   '<div class="chips"><button class="chip" data-act="libguia" data-v="apiario" aria-pressed="'+(S.lib.guia!=='gallinas'&&S.lib.guia!=='cerdos'&&S.lib.guia!=='vacas')+'">Apiario</button><button class="chip" data-act="libguia" data-v="gallinas" aria-pressed="'+(S.lib.guia==='gallinas')+'">Gallinas</button><button class="chip" data-act="libguia" data-v="cerdos" aria-pressed="'+(S.lib.guia==='cerdos')+'">Cerdos</button><button class="chip" data-act="libguia" data-v="vacas" aria-pressed="'+(S.lib.guia==='vacas')+'">Vacas</button>'+['Hidroponía','Piscicultura','Comparativa'].map(function(x){return '<button class="chip" disabled style="opacity:.55;cursor:not-allowed">'+x+' · próximamente</button>'}).join('')+'</div></section>';
   if(S.lib.guia==='gallinas')return h+vGallinas()+'</div>';
   if(S.lib.guia==='cerdos')return h+vCerdos()+'</div>';
+  if(S.lib.guia==='vacas')return h+vVacas()+'</div>';
   h+='<section class="panel"><h2>Apiario: de cero a la primera cosecha</h2><div class="chips"><button class="chip" data-act="libpais" data-v="Italia" aria-pressed="'+(!co)+'">Italia</button><button class="chip" data-act="libpais" data-v="Colombia" aria-pressed="'+co+'">Colombia</button></div>'+
    '<dl class="figs"><div><dt>Colmenas para empezar</dt><dd>2 a 4</dd><span class="sub">hasta 8 con experiencia</span></div><div><dt>Miel por colmena</dt><dd>'+(co?'~40 kg':'20–30 kg')+'</dd><span class="sub">'+(co?'según datos de Antioquia':'hasta 40–50 kg un buen año')+'</span></div><div><dt>Inversión (4 colmenas)</dt><dd>'+(function(){var c=calcPresu(D,4);return fmt(c.lo)+'–'+fmt(c.hi)+' '+D.mon})()+'</dd></div></dl>'+
    '<p class="muted">'+(co?'Colombia no tiene invierno: las abejas están activas todo el año y la cosecha depende de las floraciones y de las lluvias de tu zona. La abeja africanizada rinde bien pero es defensiva. Fedeabejas calcula que la miel nacional cubre entre el 20% y el 30% de la demanda.':'Una hectárea sobra para un apiario: las abejas buscan néctar en un radio de unos 3 km, y además polinizan frutales, hortalizas y aromáticas de tu terreno. El avellano no, porque se poliniza con el viento.')+'</p></section>';
@@ -1174,6 +1251,7 @@ document.addEventListener('change',function(e){
 });
 document.addEventListener('input',function(e){
   var el=e.target;
+  if(el.id==='vc_n'||el.id==='vc_kgc'||el.id==='vc_pc'||el.id==='vc_kgv'||el.id==='vc_pv'||el.id==='vc_m'||el.id==='vc_a'){var vo=$('vc_out');if(vo)vo.innerHTML=vacCalc.apply(null,['vc_n','vc_kgc','vc_pc','vc_kgv','vc_pv','vc_m','vc_a'].map(function(i){return parseNum($(i).value)}));return}
   if(el.id==='cd_n'||el.id==='cd_kg'||el.id==='cd_p'||el.id==='cd_l'||el.id==='cd_pi'){var co2=$('cd_out');if(co2)co2.innerHTML=cerCalc(parseNum($('cd_n').value),parseNum($('cd_kg').value),parseNum($('cd_p').value),parseNum($('cd_l').value),parseNum($('cd_pi').value));return}
   if(el.id==='gl_n'||el.id==='gl_h'||el.id==='gl_p'||el.id==='gl_pi'){var go=$('gl_out');if(go)go.innerHTML=galCalc(parseNum($('gl_n').value),parseNum($('gl_h').value),parseNum($('gl_p').value),parseNum($('gl_pi').value));return}
   if(el.id&&el.id.indexOf('hp_')===0){var ho=$('hp_out');if(ho)ho.innerHTML=hipoCalc();return}
