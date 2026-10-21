@@ -437,7 +437,7 @@ function altAviso(t){
   return out.join('. ');
 }
 var S={view:'terrenos',lib:{pais:'Italia'},terrenos:[],zonas:[],pesos:null,db:null,sample:null,downloads:null,ready:false,dbOff:false,err:null,
-  f:{q:'',estado:'',zona:'',edif:'',alt:'',pais:'',pmax:'',cpmax:'',cha:'',ha:'',seg:'',muni:'',orden:'score'},compare:[],drawer:null};
+  f:{q:'',alerta:'',estado:'',zona:'',edif:'',alt:'',pais:'',pmax:'',cpmax:'',cha:'',ha:'',seg:'',muni:'',orden:'score'},compare:[],drawer:null};
 try{var cs=JSON.parse(localStorage.getItem('ct_compare')||'[]');if(Array.isArray(cs))S.compare=cs.slice(0,4)}catch(e){}
 var Q={};
 try{var fx0=parseFloat(localStorage.getItem('ct_fx'));if(fx0>0)S.lib.fx=fx0}catch(e){}
@@ -1546,6 +1546,8 @@ function visibles(){
       if(S.f.muni&&segKey(t.comune)!==S.f.muni)return false;
       if(S.f.seg!==''){var sg=segOf(t);if(S.f.seg==='sin'){if(sg)return false}else if(!sg||sg.l>Number(S.f.seg))return false}
     }
+    if(S.f.alerta==='si'&&t.alerta!=='si')return false;
+    if(S.f.alerta==='no'&&t.alerta==='si')return false;
     if(S.f.ha){var hh=(t.m2||0)/10000,rg=S.f.ha.split('-'),lo=Number(rg[0]),hi=rg[1]===''?Infinity:Number(rg[1]);if(!(t.m2>0&&hh>=lo&&hh<hi))return false}
     if(S.f.alt){var bb=altBanda(t.altitud,t.pais);if((bb?bb.k:'sin')!==S.f.alt)return false}
     if(q&&[t.nombre,t.comune,t.provincia,t.cultivo,t.notas].join(' ').toLowerCase().indexOf(q)<0)return false;
@@ -1585,7 +1587,7 @@ function vTerrenos(){
       sel('fcs','Seguridad',[['','Toda seguridad'],['0','Solo riesgo bajo'],['1','Hasta riesgo moderado'],['2','Hasta riesgo alto'],['sin','Sin información']],S.f.seg);
   }
   var oopts=[['score','Mejor puntuación'],['seg','Menor riesgo de seguridad'],['pha','Menor €/ha'],['precio','Menor precio'],['m2','Mayor superficie'],['nombre','Nombre']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.orden===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('');
-  var h='<div class="bar"><input class="grow" type="text" id="q" placeholder="Buscar por nombre, comune o cultivo" value="'+esc(S.f.q)+'" aria-label="Buscar"><select id="fz" aria-label="Zona">'+zopts+'</select><select id="fe" aria-label="Edificabilidad">'+eopts+'</select><select id="fa" aria-label="Altitud">'+aopts+'</select><select id="fha" aria-label="Hectáreas">'+hopts+'</select><select id="fpa" aria-label="País">'+popts+'</select>'+(co?'':'<select id="fpm" aria-label="Presupuesto máximo">'+mopts+'</select>')+''+cx+'<select id="fo" aria-label="Ordenar">'+oopts+'</select></div>';
+  var h='<div class="bar"><input class="grow" type="text" id="q" placeholder="Buscar por nombre, comune o cultivo" value="'+esc(S.f.q)+'" aria-label="Buscar"><select id="fz" aria-label="Zona">'+zopts+'</select><select id="fe" aria-label="Edificabilidad">'+eopts+'</select><select id="fa" aria-label="Altitud">'+aopts+'</select><select id="fha" aria-label="Hectáreas">'+hopts+'</select><select id="fal" aria-label="Alertas">'+[['','Con y sin alerta'],['si','Solo con alerta'],['no','Sin alerta']].map(function(x){return '<option value="'+x[0]+'"'+(S.f.alerta===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('')+'</select><select id="fpa" aria-label="País">'+popts+'</select>'+(co?'':'<select id="fpm" aria-label="Presupuesto máximo">'+mopts+'</select>')+''+cx+'<select id="fo" aria-label="Ordenar">'+oopts+'</select></div>';
   h+='<div class="bar"><button class="btn pri" data-act="nuevo">Nuevo terreno</button><button class="btn" data-act="importar">Pegar anuncio</button>'+(S.downloads?'<button class="btn" data-act="csv">Exportar CSV</button><button class="btn" data-act="backup">Copia de seguridad</button>':'')+'</div>';
   h+='<div class="chips">'+chips+'</div>';
   if(!S.terrenos.length)return h+'<div class="empty"><h2>Aún no hay terrenos</h2><p>Pega el texto de un anuncio de Immobiliare, Idealista o Subito, o crea la primera ficha a mano.</p></div>';
@@ -1908,6 +1910,7 @@ document.addEventListener('change',function(e){
   if(el.id==='fa'){S.f.alt=el.value;render();return}
   if(el.id==='fpa'){S.f.pais=el.value;render();return}
   if(el.id==='fcm'){S.f.cpmax=el.value;render();return}
+  if(el.id==='fal'){S.f.alerta=el.value;render();return}
   if(el.id==='fha'){S.f.ha=el.value;render();return}
   if(el.id==='fcmu'){S.f.muni=el.value;render();return}
   if(el.id==='fcs'){S.f.seg=el.value;render();return}
