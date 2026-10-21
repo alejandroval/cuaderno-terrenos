@@ -868,14 +868,95 @@ function vVacas(){
   h+='<section class="panel"><h2>Fuentes</h2><ul class="rules">'+FUE.map(function(f){return '<li><a href="'+f[1]+'" target="_blank" rel="noopener">'+esc(f[0])+'</a></li>'}).join('')+'</ul></section>';
   return h;
 }
+
+/* ---------- Guía de piscicultura ---------- */
+var PEZ_ES={mon:'€',n:1000,g:300,sup:80,precio:6.5,alev:0.25,fcr:1.2,pienso:1.6,esp:'trucha',
+ partidas:[
+  ['Estanque o tanques con entrada y salida de agua','fijo',1,1500,8000,'est'],
+  ['Obras de toma y desagüe, con filtro de salida','fijo',1,300,1500,'est'],
+  ['Red antipájaros y cerca perimetral','fijo',1,200,1000,'est'],
+  ['Redes, balanza, cubos y medidor de oxígeno','fijo',1,150,600,'est'],
+  ['Trámites, proyecto técnico y tasas regionales','fijo',1,200,1500,'est']
+ ]};
+var PEZ_CO={mon:'COP',n:2000,g:450,sup:85,precio:8500,alev:250,fcr:1.6,pienso:3200,esp:'tilapia o cachama',
+ partidas:[
+  ['Estanque excavado o tanques con entrada y salida de agua','fijo',1,3000000,15000000,'est'],
+  ['Obras de toma y desagüe, con filtro de salida contra escapes','fijo',1,500000,3000000,'est'],
+  ['Red antipájaros y cerca perimetral','fijo',1,500000,2500000,'est'],
+  ['Redes, balanza, cubos y equipo de medición','fijo',1,300000,1200000,'est'],
+  ['Trámites y concesión de aguas','fijo',1,300000,2000000,'est']
+ ]};
+var PEZ_PASOS_ES=[
+ ['Empieza por el agua','Un cultivo de peces depende del agua: caudal, temperatura y calidad todo el año. Antes de excavar, pregunta en la Regione y en el Comune qué concesión de derivación necesitas y si tu fuente basta. Sin agua segura no hay proyecto.'],
+ ['Pregunta qué autorización te toca','Según el D.Lgs. 148/2008, cada azienda di acquacoltura debe estar autorizada por la región y registrada por la ASL, con un número de autorización. La región puede limitar el requisito a un simple registro para instalaciones sin fines comerciales, estanques de pesca deportiva no conectados al sistema hídrico y empresas que venden solo para consumo humano. Confirma cuál es tu caso en la ASL y la Regione Lazio.'],
+ ['Elige la especie','La trucha pide agua fría, corriente y muy oxigenada. Para aguas más cálidas y tranquilas hay otras especies. Pide opinión a un técnico acuicultor: la elección depende de la temperatura de tu agua en verano.'],
+ ['Diseña el estanque y evita escapes','Con toma y desagüe separados, filtro en la salida y red contra aves. No conectes el estanque a cauces naturales sin autorización.'],
+ ['Compra alevines de un proveedor autorizado','Pide el documento sanitario y registra la entrada. Empieza con un lote pequeño.'],
+ ['Lleva los registros','Debes anotar los movimientos de entrada y salida de animales, la mortalidad por unidad y el programa de vigilancia sanitaria. Un aumento de mortalidad se comunica enseguida a la ASL.'],
+ ['Planifica la venta','Vender para consumo humano tiene requisitos del Reg. CE 853/2004 y de la ASL. Confirma cómo lo aplica tu región antes de vender.']
+];
+var PEZ_PASOS_CO=[
+ ['Empieza por el agua','Necesitas caudal y calidad todo el año. El uso de agua de una quebrada, río o nacimiento requiere concesión de la autoridad ambiental (en Antioquia, Corantioquia, Cornare o Corpourabá según la zona). Verifica con la tuya antes de excavar.'],
+ ['Define la escala','Con una hectárea y poco capital, un par de estanques pequeños bastan para aprender. Empieza con un ciclo.'],
+ ['Elige la especie según el piso térmico','Tilapia y cachama se asocian al clima cálido; la trucha, al frío. Es una pauta mía, sin fuente: confirma con la UMATA, la AUNAP o un técnico qué especie va mejor a la altura de tu terreno.'],
+ ['Permiso de cultivo en la AUNAP','La AUNAP otorga los permisos de cultivo. En su ejemplo para peces ornamentales piden solicitud con ubicación, área, especies, volumen, bioseguridad contra escapes y concesión de aguas; los requisitos para peces de consumo pueden ser otros. Pregunta en la regional de la AUNAP.'],
+ ['Registro sanitario del predio en el ICA','La Res. ICA 090464 de 2021 incluye la acuicultura. Pide cédula, RUT o NIT, ubicación y hectáreas, y declaraciones propias de la especie. Es sanitario y no prueba propiedad.'],
+ ['Evita escapes y controla la calidad del agua','Filtro en el desagüe, red contra aves y control de oxígeno y temperatura.'],
+ ['Lleva los registros','Anota alevines, alimento, mortalidad, pesos y ventas. Es la base para calcular si rinde.']
+];
+var PEZ_LEGAL_ES=[
+ ['Autorización','Cada azienda di acquacoltura: autorizada por la región y registrada por la ASL (D.Lgs. 148/2008, arts. 4 y 5).'],
+ ['Simplificación','La región puede limitar el requisito a un registro para instalaciones sin fines comerciales, estanques de pesca deportiva no conectados al sistema hídrico, y ventas solo para consumo humano.'],
+ ['Registros','Entradas y salidas de animales, mortalidad por unidad y vigilancia sanitaria (art. 9).'],
+ ['Mortalidad','Aumentos de mortalidad: denunciar de inmediato a la ASL (art. 26).'],
+ ['Sanciones','Multas de 400 a 9.000 € según el incumplimiento (art. 56).'],
+ ['Sin verificar','Formularios, plazos y la concesión de agua en Lazio: consulta a la Regione Lazio y al Comune. El procedimiento que revisé es de Umbría y no sirve de guía.']
+];
+var PEZ_LEGAL_CO=[
+ ['Permiso de cultivo','Lo otorga la AUNAP. Los requisitos para peces de consumo no los pude verificar.'],
+ ['Concesión de aguas','El ejemplo de la AUNAP para ornamentales (Buenaventura) la pide con la solicitud. En Antioquia, confirma con tu corporación ambiental.'],
+ ['Registro sanitario','Res. ICA 090464 de 2021: incluye acuicultura y no prueba propiedad.'],
+ ['Escapes','Requiere medidas de bioseguridad contra escapes al medio natural.'],
+ ['Sin verificar','Las medidas temporales de la Res. AUNAP 2024 de 2020 por COVID no son una guía permanente.']
+];
+var PEZ_FUENTES_ES=[
+ ['D.Lgs. 148/2008 (sanidad animal en acuicultura)','https://www.regione.sicilia.it/sites/default/files/2022-12/D.lgs_.%20n.148-2008.pdf'],
+ ['Procedimiento regional de Umbría (solo como referencia de proceso)','https://regione.umbria.it/documents/18/1254939/PROCEDURE+DI+RILASCIO+E+RINNOVO+AUTORIZZAZIONI+GESTIONE+IMPIANTI+DI+ACQUACOLTURA/371e8998-8e1f-4c77-af5d-09c0869dbc91']
+];
+var PEZ_FUENTES_CO=[
+ ['Resolución AUNAP 1849 de 2017 (peces ornamentales, Buenaventura; ejemplo)','https://aunap.gov.co/documentos/resoluciones/Resoluciones_2017/1849.PDF'],
+ ['Resolución ICA 090464 de 2021 (Registro Sanitario de Predio Pecuario)','https://www.ica.gov.co/getattachment/74c359e3-9201-4db9-849f-98ab5a9e2d0b/2021R90464.aspx']
+];
+function pezD(){return S.lib.pais==='Colombia'?PEZ_CO:PEZ_ES}
+function pezCalc(n,g,sup,p,al,fcr,pi){
+  var D=pezD();n=Math.max(0,Math.round(n||0));g=Math.max(0,g||0);sup=clamp(sup||0,0,100);p=Math.max(0,p||0);al=Math.max(0,al||0);fcr=Math.max(0,fcr||0);pi=Math.max(0,pi||0);
+  function m(x){return fmt(Math.round(x))+' '+D.mon}
+  var lo=0,hi=0,rows=D.partidas.map(function(r){lo+=r[3];hi+=r[4];return '<tr><td>'+esc(r[0])+' '+tagFuente(r[5])+'</td><td class="mono">'+fmt(r[3])+' – '+fmt(r[4])+' '+D.mon+'</td></tr>'}).join('');
+  var kg=n*sup/100*g/1000,seed=n*al,feed=kg*fcr*pi,val=kg*p;
+  return '<div class="tablewrap"><table class="cost">'+rows+'<tr class="tot"><td>Instalaciones (una vez)</td><td>'+m(lo)+' – '+m(hi)+'</td></tr></table></div>'+
+   '<p class="live-top"><span><b>Por ciclo de '+fmt(n)+' alevines:</b> pescado cosechado '+fmt(Math.round(kg))+' kg. Alevines '+m(seed)+' + pienso '+m(feed)+'. <b>Venta:</b> '+m(val)+'. <b>Diferencia:</b> '+m(val-seed-feed)+' antes de agua, energía, mano de obra y trámites.</span></p>';
+}
+function vPeces(){
+  var co=S.lib.pais==='Colombia',D=pezD(),PASOS=co?PEZ_PASOS_CO:PEZ_PASOS_ES,LEG=co?PEZ_LEGAL_CO:PEZ_LEGAL_ES,FUE=co?PEZ_FUENTES_CO:PEZ_FUENTES_ES;
+  var h='<section class="panel"><h2>Piscicultura: de cero al primer ciclo</h2><div class="chips"><button class="chip" data-act="libpais" data-v="Italia" aria-pressed="'+(!co)+'">Italia</button><button class="chip" data-act="libpais" data-v="Colombia" aria-pressed="'+co+'">Colombia</button></div>'+
+   '<p class="muted">'+(co?'La piscicultura de agua dulce es viable donde hay agua limpia todo el año. En Antioquia, terrenos con nacimiento o quebrada tienen ventaja.':'En Italia, la piscicultura exige autorización sanitaria y una concesión de agua. Para empezar, conviene hablar con la ASL y la Regione antes de gastar en obras.')+'</p>'+
+   '<p class="hint">Los costos, pesos, precios y conversiones de esta guía son <b>estimaciones mías</b> sin fuente: ajústalos con datos reales de tu zona. Solo los datos legales vienen de las fuentes citadas.</p></section>';
+  h+='<section class="panel"><h2>Paso a paso</h2><ol class="steps">'+PASOS.map(function(x){return '<li><b>'+esc(x[0])+'.</b> '+esc(x[1])+'</li>'}).join('')+'</ol></section>';
+  h+='<section class="panel"><h2>Presupuesto y ciclo ('+(co?'Colombia, en COP':'Italia, en euros')+')</h2><p class="muted">Ejemplo con '+D.esp+'.</p><div class="calc"><label class="fld"><span>Alevines</span><input type="text" inputmode="numeric" id="pz_n" value="'+D.n+'"></label><label class="fld"><span>Peso final (g)</span><input type="text" inputmode="numeric" id="pz_g" value="'+D.g+'"></label><label class="fld"><span>Supervivencia (%)</span><input type="text" inputmode="numeric" id="pz_s" value="'+D.sup+'"></label><label class="fld"><span>Precio de venta por kg ('+D.mon+')</span><input type="text" inputmode="decimal" id="pz_p" value="'+D.precio+'"></label><label class="fld"><span>Precio por alevín ('+D.mon+')</span><input type="text" inputmode="decimal" id="pz_a" value="'+D.alev+'"></label><label class="fld"><span>Pienso por kg de pescado (FCR)</span><input type="text" inputmode="decimal" id="pz_f" value="'+D.fcr+'"></label><label class="fld"><span>Precio del pienso ('+D.mon+' por kg)</span><input type="text" inputmode="decimal" id="pz_pi" value="'+D.pienso+'"></label></div><div id="pz_out">'+pezCalc(D.n,D.g,D.sup,D.precio,D.alev,D.fcr,D.pienso)+'</div></section>';
+  h+='<section class="panel"><h2>Qué dice la ley</h2><ul class="rules">'+LEG.map(function(x){return '<li><b>'+esc(x[0])+':</b> '+esc(x[1])}).join('</li>')+'</li></ul><p class="hint">Resumen de las fuentes citadas, sin valor de asesoría legal. '+(co?'Confirma con la AUNAP, el ICA y la corporación ambiental.':'Confirma con la ASL de Viterbo y la Regione Lazio.')+'</p></section>';
+  h+='<section class="panel"><h2>Errores comunes de quien empieza</h2><ul class="rules"><li>Excavar antes de asegurar el agua y los permisos.</li><li>Sembrar demasiados peces para el oxígeno disponible.</li><li>Dejar el desagüe sin filtro y provocar escapes.</li><li>No registrar mortalidad ni movimientos.</li><li>Olvidar que el pienso es el mayor costo y calcular solo el alevín.</li></ul></section>';
+  h+='<section class="panel"><h2>Fuentes</h2><ul class="rules">'+FUE.map(function(f){return '<li><a href="'+f[1]+'" target="_blank" rel="noopener">'+esc(f[0])+'</a></li>'}).join('')+'</ul></section>';
+  return h;
+}
 function vBiblioteca(){
   var D=apiD(),co=S.lib.pais==='Colombia',PASOS=co?PASOS_CO:PASOS_ES,LEG=co?LEGAL_CO:LEGAL_ES,FUE=co?FUENTES_CO:FUENTES_ES;
   var h='<div class="stack">';
   h+='<section class="panel"><h2>Biblioteca de autosuficiencia</h2><p class="muted">Guías para producir tu propia comida y generar ingresos con la tierra. Cada guía trae pasos, presupuesto, calendario y fuentes.</p>'+
-   '<div class="chips"><button class="chip" data-act="libguia" data-v="apiario" aria-pressed="'+(S.lib.guia!=='gallinas'&&S.lib.guia!=='cerdos'&&S.lib.guia!=='vacas')+'">Apiario</button><button class="chip" data-act="libguia" data-v="gallinas" aria-pressed="'+(S.lib.guia==='gallinas')+'">Gallinas</button><button class="chip" data-act="libguia" data-v="cerdos" aria-pressed="'+(S.lib.guia==='cerdos')+'">Cerdos</button><button class="chip" data-act="libguia" data-v="vacas" aria-pressed="'+(S.lib.guia==='vacas')+'">Vacas</button>'+['Hidroponía','Piscicultura','Comparativa'].map(function(x){return '<button class="chip" disabled style="opacity:.55;cursor:not-allowed">'+x+' · próximamente</button>'}).join('')+'</div></section>';
+   '<div class="chips"><button class="chip" data-act="libguia" data-v="apiario" aria-pressed="'+(S.lib.guia!=='gallinas'&&S.lib.guia!=='cerdos'&&S.lib.guia!=='vacas'&&S.lib.guia!=='peces')+'">Apiario</button><button class="chip" data-act="libguia" data-v="gallinas" aria-pressed="'+(S.lib.guia==='gallinas')+'">Gallinas</button><button class="chip" data-act="libguia" data-v="cerdos" aria-pressed="'+(S.lib.guia==='cerdos')+'">Cerdos</button><button class="chip" data-act="libguia" data-v="vacas" aria-pressed="'+(S.lib.guia==='vacas')+'">Vacas</button><button class="chip" data-act="libguia" data-v="peces" aria-pressed="'+(S.lib.guia==='peces')+'">Piscicultura</button>'+['Hidroponía','Comparativa'].map(function(x){return '<button class="chip" disabled style="opacity:.55;cursor:not-allowed">'+x+' · próximamente</button>'}).join('')+'</div></section>';
   if(S.lib.guia==='gallinas')return h+vGallinas()+'</div>';
   if(S.lib.guia==='cerdos')return h+vCerdos()+'</div>';
   if(S.lib.guia==='vacas')return h+vVacas()+'</div>';
+  if(S.lib.guia==='peces')return h+vPeces()+'</div>';
   h+='<section class="panel"><h2>Apiario: de cero a la primera cosecha</h2><div class="chips"><button class="chip" data-act="libpais" data-v="Italia" aria-pressed="'+(!co)+'">Italia</button><button class="chip" data-act="libpais" data-v="Colombia" aria-pressed="'+co+'">Colombia</button></div>'+
    '<dl class="figs"><div><dt>Colmenas para empezar</dt><dd>2 a 4</dd><span class="sub">hasta 8 con experiencia</span></div><div><dt>Miel por colmena</dt><dd>'+(co?'~40 kg':'20–30 kg')+'</dd><span class="sub">'+(co?'según datos de Antioquia':'hasta 40–50 kg un buen año')+'</span></div><div><dt>Inversión (4 colmenas)</dt><dd>'+(function(){var c=calcPresu(D,4);return fmt(c.lo)+'–'+fmt(c.hi)+' '+D.mon})()+'</dd></div></dl>'+
    '<p class="muted">'+(co?'Colombia no tiene invierno: las abejas están activas todo el año y la cosecha depende de las floraciones y de las lluvias de tu zona. La abeja africanizada rinde bien pero es defensiva. Fedeabejas calcula que la miel nacional cubre entre el 20% y el 30% de la demanda.':'Una hectárea sobra para un apiario: las abejas buscan néctar en un radio de unos 3 km, y además polinizan frutales, hortalizas y aromáticas de tu terreno. El avellano no, porque se poliniza con el viento.')+'</p></section>';
@@ -1254,6 +1335,7 @@ document.addEventListener('change',function(e){
 });
 document.addEventListener('input',function(e){
   var el=e.target;
+  if(el.id&&el.id.indexOf('pz_')===0){var po=$('pz_out');if(po)po.innerHTML=pezCalc.apply(null,['pz_n','pz_g','pz_s','pz_p','pz_a','pz_f','pz_pi'].map(function(i){return parseNum($(i).value)}));return}
   if(el.id==='vc_n'||el.id==='vc_kgc'||el.id==='vc_pc'||el.id==='vc_kgv'||el.id==='vc_pv'||el.id==='vc_m'||el.id==='vc_a'){var vo=$('vc_out');if(vo)vo.innerHTML=vacCalc.apply(null,['vc_n','vc_kgc','vc_pc','vc_kgv','vc_pv','vc_m','vc_a'].map(function(i){return parseNum($(i).value)}));return}
   if(el.id==='cd_n'||el.id==='cd_kg'||el.id==='cd_p'||el.id==='cd_l'||el.id==='cd_pi'){var co2=$('cd_out');if(co2)co2.innerHTML=cerCalc(parseNum($('cd_n').value),parseNum($('cd_kg').value),parseNum($('cd_p').value),parseNum($('cd_l').value),parseNum($('cd_pi').value));return}
   if(el.id==='gl_n'||el.id==='gl_h'||el.id==='gl_p'||el.id==='gl_pi'){var go=$('gl_out');if(go)go.innerHTML=galCalc(parseNum($('gl_n').value),parseNum($('gl_h').value),parseNum($('gl_p').value),parseNum($('gl_pi').value));return}
