@@ -719,14 +719,14 @@ function vGallinas(){
 }
 
 /* ---------- Guía de cerdos ---------- */
-var CER_ES={mon:'€',n:4,kg:110,precio:1.4,lechon:70,pienso:0.4,
+var CER_ES={mon:'€',n:4,kg:110,precio:1.88,lechon:70,pienso:0.4,ref:'Referencia de la CUN (27 de agosto de 2026): 1,884 € por kg para cerdos de 156 a 200 kg del circuito tutelado. Tu cerdo de 110 kg es más ligero, así que el precio puede variar. El lechón y el pienso son supuestos míos.',
  partidas:[
   ['Refugio techado con suelo seco y cama de paja','fijo',1,200,800,'est'],
   ['Corral con cerca sólida y, si quieres, hilo eléctrico','fijo',1,150,500,'est'],
   ['Comedero y bebedero resistentes','fijo',1,40,120,'est'],
   ['Desinfectante, ropa y calzado de trabajo dedicados','fijo',1,40,120,'est']
  ]};
-var CER_CO={mon:'COP',n:4,kg:100,precio:7500,lechon:250000,pienso:2800,
+var CER_CO={mon:'COP',n:4,kg:100,precio:7500,lechon:250000,pienso:2800,ref:'Referencia: según Porkcolombia y SIPSA-DANE (cierre de abril de 2026), la carne de cerdo se vendía al por mayor a 18.775 COP por kg, frente a 36.908 de la res. Eso es carne, no cerdo en pie: no pude encontrar el precio por kg vivo, así que los 7.500 COP, el lechón y el pienso son supuestos míos.',
  partidas:[
   ['Cochera techada con piso lavable y drenaje','fijo',1,1500000,5000000,'est'],
   ['Cerca perimetral','fijo',1,500000,2000000,'est'],
@@ -768,11 +768,13 @@ var CER_LEGAL_CO=[
 ];
 var CER_FUENTES_ES=[
  ['Registro de allevamento familiare de suini (ejemplo de formulario en Italia)','https://pagamentipa.comune.mantova.it/s3/3824/allegati/suic/attivita_produttive/ats-richiesta-registraz-allev-familiari-autoconsumo.pdf'],
- ['Registro de allevamento familiare, ASL Viterbo','https://www.asl.vt.it/storage/uploads/forms/25573a635db3edcdf822092efad52d72.pdf']
+ ['Registro de allevamento familiare, ASL Viterbo','https://www.asl.vt.it/storage/uploads/forms/25573a635db3edcdf822092efad52d72.pdf'],
+ ['Precios CUN de cerdos de matadero, 27/08/2026 (Crefis)','https://www.crefis.it/news/articolo/prezzi-dei-suini-da-macello-cun-del-27-08-2026']
 ];
 var CER_FUENTES_CO=[
  ['Resolución ICA 2640 de 2007 (granjas porcinas)','https://porkcolombia.co/wp-content/uploads/2024/01/Resolucion-ICA-2640.pdf'],
- ['Resolución ICA 77044 de 2020 (predios de exportación)','https://normograma.invima.gov.co/normograma/docs/pdf/resolucion_ica_77044_2020.pdf']
+ ['Resolución ICA 77044 de 2020 (predios de exportación)','https://normograma.invima.gov.co/normograma/docs/pdf/resolucion_ica_77044_2020.pdf'],
+ ['Carne de cerdo frente a la res en 2026 (El Colombiano, con datos de Porkcolombia y SIPSA)','https://www.elcolombiano.com/negocios/carne-de-cerdo-colombia-precios-2026-mas-barata-que-res-y-pollo-PD36247392']
 ];
 function cerD(){return S.lib.pais==='Colombia'?CER_CO:CER_ES}
 function cerCalc(n,kg,p,l,pi){
@@ -789,7 +791,7 @@ function vCerdos(){
    '<p class="muted">'+(co?'Los cerdos dan retorno más rápido que otras especies, pero exigen sanidad estricta y permisos si vas a vender.':'En Italia, la cría familiar está muy limitada (4 cerdos de engorde, solo autoconsumo) y la bioseguridad es estricta por la peste porcina africana. Para vender hay que registrarse como actividad comercial: pregunta a la ASL.')+'</p>'+
    '<p class="hint">Los costos, pesos y precios de esta guía son <b>estimaciones mías</b> sin fuente: ajústalos con datos reales de tu zona. Solo los datos legales vienen de las fuentes citadas.</p></section>';
   h+='<section class="panel"><h2>Paso a paso</h2><ol class="steps">'+PASOS.map(function(x){return '<li><b>'+esc(x[0])+'.</b> '+esc(x[1])+'</li>'}).join('')+'</ol></section>';
-  h+='<section class="panel"><h2>Presupuesto y ciclo ('+(co?'Colombia, en COP':'Italia, en euros')+')</h2><div class="calc"><label class="fld"><span>Cerdos por ciclo</span><input type="text" inputmode="numeric" id="cd_n" value="'+D.n+'"></label><label class="fld"><span>Peso final (kg)</span><input type="text" inputmode="numeric" id="cd_kg" value="'+D.kg+'"></label><label class="fld"><span>Precio por kg vivo ('+D.mon+')</span><input type="text" inputmode="decimal" id="cd_p" value="'+D.precio+'"></label><label class="fld"><span>Precio del lechón ('+D.mon+')</span><input type="text" inputmode="decimal" id="cd_l" value="'+D.lechon+'"></label><label class="fld"><span>Pienso ('+D.mon+' por kg)</span><input type="text" inputmode="decimal" id="cd_pi" value="'+D.pienso+'"></label></div><div id="cd_out">'+cerCalc(D.n,D.kg,D.precio,D.lechon,D.pienso)+'</div></section>';
+  h+='<section class="panel"><h2>Presupuesto y ciclo ('+(co?'Colombia, en COP':'Italia, en euros')+')</h2><div class="calc"><label class="fld"><span>Cerdos por ciclo</span><input type="text" inputmode="numeric" id="cd_n" value="'+D.n+'"></label><label class="fld"><span>Peso final (kg)</span><input type="text" inputmode="numeric" id="cd_kg" value="'+D.kg+'"></label><label class="fld"><span>Precio por kg vivo ('+D.mon+')</span><input type="text" inputmode="decimal" id="cd_p" value="'+D.precio+'"></label><label class="fld"><span>Precio del lechón ('+D.mon+')</span><input type="text" inputmode="decimal" id="cd_l" value="'+D.lechon+'"></label><label class="fld"><span>Pienso ('+D.mon+' por kg)</span><input type="text" inputmode="decimal" id="cd_pi" value="'+D.pienso+'"></label></div><div id="cd_out">'+cerCalc(D.n,D.kg,D.precio,D.lechon,D.pienso)+'</div><p class="hint">'+esc(D.ref)+'</p></section>';
   h+='<section class="panel"><h2>Qué dice la ley</h2><ul class="rules">'+LEG.map(function(x){return '<li><b>'+esc(x[0])+':</b> '+esc(x[1])}).join('</li>')+'</li></ul><p class="hint">Resumen de las fuentes citadas, sin valor de asesoría legal. '+(co?'Confirma con el ICA y la alcaldía.':'Confirma con la ASL de Viterbo, incluidas las medidas por peste porcina africana.')+'</p></section>';
   h+='<section class="panel"><h2>Errores comunes de quien empieza</h2><ul class="rules"><li>Dar restos de comida de la casa a los cerdos (está prohibido en Italia).</li><li>Dejar el corral accesible a jabalíes o perros.</li><li>Comprar lechones sin tener refugio, cerca y trámites listos.</li><li>Vender o ceder animales siendo un allevamento familiare.</li><li>Calcular solo el precio del lechón y olvidar el pienso, que es el mayor costo.</li></ul></section>';
   h+='<section class="panel"><h2>Fuentes</h2><ul class="rules">'+FUE.map(function(f){return '<li><a href="'+f[1]+'" target="_blank" rel="noopener">'+esc(f[0])+'</a></li>'}).join('')+'</ul></section>';
@@ -874,7 +876,7 @@ function vVacas(){
 }
 
 /* ---------- Guía de piscicultura ---------- */
-var PEZ_ES={mon:'€',n:1000,g:300,sup:80,precio:6.5,alev:0.25,fcr:1.2,pienso:1.6,esp:'trucha',
+var PEZ_ES={mon:'€',n:1000,g:300,sup:80,precio:6.5,alev:0.25,fcr:1.2,pienso:1.6,esp:'trucha',ref:'Referencia: una oferta de trucha iridea de cría italiana al consumidor costaba 7,99 € por kg en D\'Ambros (hasta el 8 de noviembre de 2026). El precio de venta del productor sería menor; los 6,5 € de la calculadora, el alevín, el pienso y el FCR son supuestos míos.',
  partidas:[
   ['Estanque o tanques con entrada y salida de agua','fijo',1,1500,8000,'est'],
   ['Obras de toma y desagüe, con filtro de salida','fijo',1,300,1500,'est'],
@@ -882,7 +884,7 @@ var PEZ_ES={mon:'€',n:1000,g:300,sup:80,precio:6.5,alev:0.25,fcr:1.2,pienso:1.
   ['Redes, balanza, cubos y medidor de oxígeno','fijo',1,150,600,'est'],
   ['Trámites, proyecto técnico y tasas regionales','fijo',1,200,1500,'est']
  ]};
-var PEZ_CO={mon:'COP',n:2000,g:450,sup:85,precio:8500,alev:250,fcr:1.6,pienso:3200,esp:'tilapia o cachama',
+var PEZ_CO={mon:'COP',n:2000,g:450,sup:85,precio:13609,alev:250,fcr:1.6,pienso:3200,esp:'tilapia o cachama',ref:'Referencia de SIPSA (DANE), vía Agronegocios: la tilapia roja entera fresca se pagó a 13.609 COP por kg como promedio nacional (la página muestra una fecha posterior a hoy, así que trátalo como aproximado; es precio mayorista, no necesariamente el que recibe el productor). Alevín, pienso y FCR son supuestos míos.',
  partidas:[
   ['Estanque excavado o tanques con entrada y salida de agua','fijo',1,3000000,15000000,'est'],
   ['Obras de toma y desagüe, con filtro de salida contra escapes','fijo',1,500000,3000000,'est'],
@@ -925,11 +927,13 @@ var PEZ_LEGAL_CO=[
 ];
 var PEZ_FUENTES_ES=[
  ['D.Lgs. 148/2008 (sanidad animal en acuicultura)','https://www.regione.sicilia.it/sites/default/files/2022-12/D.lgs_.%20n.148-2008.pdf'],
+ ['Oferta de trucha iridea de cría italiana (D\'Ambros)','https://dambros.it/online/prodotto/0000029659/trota-iridea-salmonata-allevata-italia-400600g-circa'],
  ['Procedimiento regional de Umbría (solo como referencia de proceso)','https://regione.umbria.it/documents/18/1254939/PROCEDURE+DI+RILASCIO+E+RINNOVO+AUTORIZZAZIONI+GESTIONE+IMPIANTI+DI+ACQUACOLTURA/371e8998-8e1f-4c77-af5d-09c0869dbc91']
 ];
 var PEZ_FUENTES_CO=[
  ['Resolución AUNAP 1849 de 2017 (peces ornamentales, Buenaventura; ejemplo)','https://aunap.gov.co/documentos/resoluciones/Resoluciones_2017/1849.PDF'],
- ['Resolución ICA 090464 de 2021 (Registro Sanitario de Predio Pecuario)','https://www.ica.gov.co/getattachment/74c359e3-9201-4db9-849f-98ab5a9e2d0b/2021R90464.aspx']
+ ['Resolución ICA 090464 de 2021 (Registro Sanitario de Predio Pecuario)','https://www.ica.gov.co/getattachment/74c359e3-9201-4db9-849f-98ab5a9e2d0b/2021R90464.aspx'],
+ ['Tilapia roja entera fresca, SIPSA-DANE (vía Agronegocios)','https://www.agronegocios.co/precios/tilapia-roja-entera-fresca']
 ];
 function pezD(){return S.lib.pais==='Colombia'?PEZ_CO:PEZ_ES}
 function pezCalc(n,g,sup,p,al,fcr,pi){
@@ -946,7 +950,7 @@ function vPeces(){
    '<p class="muted">'+(co?'La piscicultura de agua dulce es viable donde hay agua limpia todo el año. En Antioquia, terrenos con nacimiento o quebrada tienen ventaja.':'En Italia, la piscicultura exige autorización sanitaria y una concesión de agua. Para empezar, conviene hablar con la ASL y la Regione antes de gastar en obras.')+'</p>'+
    '<p class="hint">Los costos, pesos, precios y conversiones de esta guía son <b>estimaciones mías</b> sin fuente: ajústalos con datos reales de tu zona. Solo los datos legales vienen de las fuentes citadas.</p></section>';
   h+='<section class="panel"><h2>Paso a paso</h2><ol class="steps">'+PASOS.map(function(x){return '<li><b>'+esc(x[0])+'.</b> '+esc(x[1])+'</li>'}).join('')+'</ol></section>';
-  h+='<section class="panel"><h2>Presupuesto y ciclo ('+(co?'Colombia, en COP':'Italia, en euros')+')</h2><p class="muted">Ejemplo con '+D.esp+'.</p><div class="calc"><label class="fld"><span>Alevines</span><input type="text" inputmode="numeric" id="pz_n" value="'+D.n+'"></label><label class="fld"><span>Peso final (g)</span><input type="text" inputmode="numeric" id="pz_g" value="'+D.g+'"></label><label class="fld"><span>Supervivencia (%)</span><input type="text" inputmode="numeric" id="pz_s" value="'+D.sup+'"></label><label class="fld"><span>Precio de venta por kg ('+D.mon+')</span><input type="text" inputmode="decimal" id="pz_p" value="'+D.precio+'"></label><label class="fld"><span>Precio por alevín ('+D.mon+')</span><input type="text" inputmode="decimal" id="pz_a" value="'+D.alev+'"></label><label class="fld"><span>Pienso por kg de pescado (FCR)</span><input type="text" inputmode="decimal" id="pz_f" value="'+D.fcr+'"></label><label class="fld"><span>Precio del pienso ('+D.mon+' por kg)</span><input type="text" inputmode="decimal" id="pz_pi" value="'+D.pienso+'"></label></div><div id="pz_out">'+pezCalc(D.n,D.g,D.sup,D.precio,D.alev,D.fcr,D.pienso)+'</div></section>';
+  h+='<section class="panel"><h2>Presupuesto y ciclo ('+(co?'Colombia, en COP':'Italia, en euros')+')</h2><p class="muted">Ejemplo con '+D.esp+'.</p><div class="calc"><label class="fld"><span>Alevines</span><input type="text" inputmode="numeric" id="pz_n" value="'+D.n+'"></label><label class="fld"><span>Peso final (g)</span><input type="text" inputmode="numeric" id="pz_g" value="'+D.g+'"></label><label class="fld"><span>Supervivencia (%)</span><input type="text" inputmode="numeric" id="pz_s" value="'+D.sup+'"></label><label class="fld"><span>Precio de venta por kg ('+D.mon+')</span><input type="text" inputmode="decimal" id="pz_p" value="'+D.precio+'"></label><label class="fld"><span>Precio por alevín ('+D.mon+')</span><input type="text" inputmode="decimal" id="pz_a" value="'+D.alev+'"></label><label class="fld"><span>Pienso por kg de pescado (FCR)</span><input type="text" inputmode="decimal" id="pz_f" value="'+D.fcr+'"></label><label class="fld"><span>Precio del pienso ('+D.mon+' por kg)</span><input type="text" inputmode="decimal" id="pz_pi" value="'+D.pienso+'"></label></div><div id="pz_out">'+pezCalc(D.n,D.g,D.sup,D.precio,D.alev,D.fcr,D.pienso)+'</div><p class="hint">'+esc(D.ref)+'</p></section>';
   h+='<section class="panel"><h2>Qué dice la ley</h2><ul class="rules">'+LEG.map(function(x){return '<li><b>'+esc(x[0])+':</b> '+esc(x[1])}).join('</li>')+'</li></ul><p class="hint">Resumen de las fuentes citadas, sin valor de asesoría legal. '+(co?'Confirma con la AUNAP, el ICA y la corporación ambiental.':'Confirma con la ASL de Viterbo y la Regione Lazio.')+'</p></section>';
   h+='<section class="panel"><h2>Errores comunes de quien empieza</h2><ul class="rules"><li>Excavar antes de asegurar el agua y los permisos.</li><li>Sembrar demasiados peces para el oxígeno disponible.</li><li>Dejar el desagüe sin filtro y provocar escapes.</li><li>No registrar mortalidad ni movimientos.</li><li>Olvidar que el pienso es el mayor costo y calcular solo el alevín.</li></ul></section>';
   h+='<section class="panel"><h2>Fuentes</h2><ul class="rules">'+FUE.map(function(f){return '<li><a href="'+f[1]+'" target="_blank" rel="noopener">'+esc(f[0])+'</a></li>'}).join('')+'</ul></section>';
