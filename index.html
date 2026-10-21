@@ -235,7 +235,7 @@ var ESTADOS={por_revisar:'Por revisar',mapeado:'Mapeado',contactado:'Contactado'
 var OPT={
   relieve:{desconocido:'Sin dato',llano:'Llano',leve:'Pendiente leve',medio:'Pendiente media',ladera:'Ladera'},
   acceso:{desconocido:'Sin dato',asfalto:'Asfaltado',sterrato:'Camino de tierra',sentiero:'Solo sendero'},
-  agua:{desconocido:'Sin dato',riego:'Riego',pozo:'Pozo',red:'Red de agua',fosso:'Arroyo (fosso)',ninguna:'Sin agua'},
+  agua:{desconocido:'Sin dato',riego:'Riego',pozo:'Pozo',red:'Red de agua',fosso:'Arroyo (fosso)',nacimiento:'Nacimiento de agua propio (Colombia)',quebrada:'Quebrada o río (Colombia)',acueducto:'Acueducto veredal (Colombia)',ninguna:'Sin agua'},
   luz:{desconocido:'Sin dato',si:'Con electricidad',no:'Sin electricidad'},
   parque:{desconocido:'Sin dato',si:'Dentro de parque',no:'Fuera de parque'},
   edif:{desconocido:'Sin dato',no_edificable:'No edificable (agrícola)',edificable:'Edificable'},
@@ -245,7 +245,7 @@ var OPT={
 var SC={
   relieve:{llano:1,leve:.8,medio:.45,ladera:.15},
   acceso:{asfalto:1,sterrato:.65,sentiero:.1},
-  agua:{riego:1,pozo:1,red:.9,fosso:.4,ninguna:0},
+  agua:{riego:1,pozo:1,red:.9,nacimiento:1,quebrada:.9,acueducto:.7,fosso:.4,ninguna:0},
   luz:{si:1,no:0},
   parque:{si:.2,no:1}
 };
@@ -257,6 +257,7 @@ var FACT=[
   {k:'superficie',l:'Superficie',d:'Una hectárea (10.000 m²) o más = 100%; menos se reduce en proporción.'},
   {k:'mercado',l:'Mercado del cultivo',d:'Valoración manual de 1 a 5 de lo sólida que es la salida comercial de lo que hay o de lo que se puede plantar.'},
   {k:'aptitud',l:'Aptitud agrícola de la zona',d:'Valoración de 1 a 5 de la zona de referencia. Se edita en Zonas y normativa.'},
+  {k:'agua',l:'Agua propia (preferencia en Colombia)',d:'Solo cuenta en terrenos de Colombia. Nacimiento propio 100%, pozo o riego 100%, quebrada o río 90% (puede requerir concesión), acueducto veredal 70%, sin agua 0%. No es una regla: si no te importa, baja su peso a 0 en Criterios.'},
   {k:'restricciones',l:'Restricciones (parque)',d:'Fuera de parque 100%, dentro de parque nacional 20%.'}
 ];
 var CHECK_CO=[
@@ -273,7 +274,7 @@ var CHECK_CO=[
   ['co_costos','Costos de notaría, registro, beneficencia y retención cotizados por escrito'],
   ['co_visita','Visita al predio, análisis de suelo y avalúo comercial antes de firmar']
 ];
-var PESOS0={precio:3,servicios:2,acceso:2,relieve:1.5,superficie:2,mercado:3,aptitud:2,restricciones:1};
+var PESOS0={precio:3,servicios:2,acceso:2,relieve:1.5,superficie:2,mercado:3,aptitud:2,restricciones:1,agua:3};
 var CHECK=[
   ['cdu','Certificato di destinazione urbanistica (CDU) pedido al comune'],
   ['catasto','Visura catastale y mapa: superficie real igual a la del anuncio'],
@@ -310,6 +311,7 @@ var TFIELDS=[
   {k:'relieve',l:'Relieve',t:'sel',o:OPT.relieve,def:'desconocido'},
   {k:'acceso',l:'Acceso',t:'sel',o:OPT.acceso,def:'desconocido'},
   {k:'agua',l:'Agua',t:'sel',o:OPT.agua,def:'desconocido'},
+  {k:'agua_nota',l:'Detalle del agua (caudal, distancia, concesión)',t:'text',full:1},
   {k:'luz',l:'Electricidad',t:'sel',o:OPT.luz,def:'desconocido'},
   {k:'parque',l:'Parque nacional',t:'sel',o:OPT.parque,def:'desconocido'},
   {k:'mercado',l:'Mercado del cultivo',t:'rate'},
@@ -453,7 +455,8 @@ function ppha(t){return t.precio>0&&t.m2>0?t.precio/(t.m2/10000):null}
 function factors(t){
   var z=zona(t.zona),f={},p=ppha(t);
   if(p!=null&&z&&z.ref_min!=null&&z.ref_max!=null&&(z.ref_min+z.ref_max)>0){f.precio=clamp(1.5-p/((z.ref_min+z.ref_max)/2),0,1)}else f.precio=null;
-  var sv=[];if(SC.agua[t.agua]!=null)sv.push(SC.agua[t.agua]);if(SC.luz[t.luz]!=null)sv.push(SC.luz[t.luz]);
+  var co=t.pais==='Colombia',sv=[];if(!co&&SC.agua[t.agua]!=null)sv.push(SC.agua[t.agua]);if(SC.luz[t.luz]!=null)sv.push(SC.luz[t.luz]);
+  f.agua=co&&SC.agua[t.agua]!=null?SC.agua[t.agua]:null;
   f.servicios=sv.length?sv.reduce(function(a,b){return a+b},0)/sv.length:null;
   f.acceso=SC.acceso[t.acceso]!=null?SC.acceso[t.acceso]:null;
   f.relieve=SC.relieve[t.relieve]!=null?SC.relieve[t.relieve]:null;
@@ -480,7 +483,7 @@ function ring(pct,size){
 function tagsFor(t){
   var a=[];
   if(t.relieve==='llano')a.push(['Llano','good']);else if(t.relieve==='ladera')a.push(['Ladera','bad']);else if(t.relieve==='leve'||t.relieve==='medio')a.push([OPT.relieve[t.relieve],'']);
-  if(t.agua==='riego'||t.agua==='pozo'||t.agua==='red')a.push([OPT.agua[t.agua],'good']);else if(t.agua==='ninguna')a.push(['Sin agua','bad']);else if(t.agua==='fosso')a.push(['Arroyo','warn']);
+  if(t.agua==='riego'||t.agua==='pozo'||t.agua==='red'||t.agua==='nacimiento'||t.agua==='quebrada'||t.agua==='acueducto')a.push([OPT.agua[t.agua],'good']);else if(t.agua==='ninguna')a.push(['Sin agua','bad']);else if(t.agua==='fosso')a.push(['Arroyo','warn']);
   if(t.luz==='si')a.push(['Electricidad','good']);else if(t.luz==='no')a.push(['Sin electricidad','bad']);
   if(t.acceso==='asfalto')a.push(['Asfalto','good']);else if(t.acceso==='sterrato')a.push(['Camino de tierra','']);else if(t.acceso==='sentiero')a.push(['Solo sendero','bad']);
   if(t.parque==='si')a.push(['Parque nacional','warn']);
