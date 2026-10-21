@@ -179,6 +179,7 @@ body{margin:0}
 .crops li.good{border-left-color:var(--good)}.crops li.warn{border-left-color:var(--warn)}.crops li.bad{border-left-color:var(--bad)}
 .crops li span{min-width:0;color:var(--ink-2)}.crops li em{display:block;font:400 11px var(--mono);color:var(--ink-3);font-style:normal;margin-top:2px}
 .sh{font-size:14px;margin:12px 0 2px}.sh.good{color:var(--good)}.sh.warn{color:var(--warn)}.sh.bad{color:var(--bad)}
+.alertbox{margin:0 0 12px;padding:12px 14px;border-radius:8px;background:var(--warn-soft);color:var(--ink);border-left:4px solid var(--warn);font-size:13.5px}.alertbox h3{margin:0 0 6px;font-size:14px;color:var(--warn)}.alertbox ul{margin:6px 0 0;padding-left:18px}.alertbox p{margin:4px 0}.alertpill{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:2px 10px;background:var(--warn-soft);color:var(--warn);margin-right:6px}
 .warnline{margin:10px 0 0;padding:8px 10px;border-radius:6px;background:var(--bad-soft);color:var(--bad);font-size:13px}
 .axis.alt{grid-template-columns:repeat(4,1fr)}
 .arow{display:grid;grid-template-columns:minmax(0,170px) 1fr 84px;gap:8px;align-items:center;font-size:13px;padding:4px 0}
@@ -300,7 +301,9 @@ var TFIELDS=[
   {k:'ubicacion',l:'Ubicación exacta (enlace de Google Maps o coordenadas)',t:'text',full:1},
   {k:'fuente',l:'Portal',t:'sel',o:OPT.fuente,def:'Otro'},
   {k:'estado',l:'Estado',t:'sel',o:ESTADOS,def:'por_revisar'},
-  {k:'fecha_anuncio',l:'Fecha del anuncio',t:'text'}]},
+  {k:'fecha_anuncio',l:'Fecha del anuncio',t:'text'},
+  {k:'alerta',l:'Alerta de anuncio',t:'sel',o:{no:'Sin alerta',si:'Alerta: verificar antes de avanzar'},def:'no'},
+  {k:'alerta_nota',l:'Motivo de la alerta',t:'area',full:1}]},
  {g:'Ubicación y precio',f:[
   {k:'pais',l:'País y moneda',t:'sel',o:OPT.pais,def:'Italia'},
   {k:'comune',l:'Comune / municipio',t:'text'},
@@ -1598,7 +1601,7 @@ function vTerrenos(){
       '<div><dt>'+(t.pais==='Colombia'?'COP por ha':'€ por ha')+'</dt><dd>'+(p!=null?fmt(p):'—')+'</dd></div></dl>'+
       '<div class="tags">'+tagsFor(t)+'</div>'+
       (t.altitud!=null&&!isNaN(t.altitud)?'<p class="cropline"><b>Van bien a '+fmt(t.altitud)+' m:</b> '+esc(cropsFor(Number(t.altitud),t.pais).opt.slice(0,5).map(function(x){return x.n.split(' (')[0]}).join(', ')||'ninguno de la lista')+'</p>':'')+
-      segMini(t)+'<div class="card-foot"><span class="pill '+est+'">'+ESTADOS[est]+'</span>'+(t.url?'<a href="'+esc(t.url)+'" target="_blank" rel="noopener" data-stop="1">Ver anuncio ↗</a> ':'')+'<a href="'+esc(gmapsUrl(t))+'" target="_blank" rel="noopener" data-stop="1">Google Maps ↗</a></div></article>';
+      segMini(t)+'<div class="card-foot">'+(t.alerta==='si'?'<span class="alertpill" title="Verifica antes de avanzar">⚠ Alerta</span>':'')+'<span class="pill '+est+'">'+ESTADOS[est]+'</span>'+(t.url?'<a href="'+esc(t.url)+'" target="_blank" rel="noopener" data-stop="1">Ver anuncio ↗</a> ':'')+'<a href="'+esc(gmapsUrl(t))+'" target="_blank" rel="noopener" data-stop="1">Google Maps ↗</a></div></article>';
   }).join('')+'</div>';
   return h;
 }
@@ -1757,11 +1760,16 @@ function closeDrawer(){S.drawer=null;$('layer').innerHTML=''}
 function shell(title,sub,body,foot){
   $('layer').innerHTML='<div class="scrim" data-act="cerrar"></div><aside class="drawer" role="dialog" aria-label="'+esc(title)+'"><div class="dh"><div><h2>'+esc(title)+'</h2>'+(sub?'<p>'+sub+'</p>':'')+'</div><button class="btn" data-act="cerrar">Cerrar</button></div><div class="db" id="db">'+body+'</div><div class="df">'+foot+'</div></aside>';
 }
+function alertHtml(t){
+  if(t.alerta!=='si')return '';
+  return '<section class="alertbox"><h3>⚠ Anuncio con señales de alerta</h3>'+(t.alerta_nota?'<p>'+esc(t.alerta_nota)+'</p>':'')+
+  '<p><b>Antes de avanzar:</b></p><ul><li>No envíes dinero ni documentos y no salgas de la plataforma (WhatsApp, correo) hasta verificar.</li><li>Pide la <b>visura catastale</b> (foglio y particella) para confirmar que el terreno existe y quién es el dueño.</li><li>Pide el <b>certificato di destinazione urbanistica</b> del Comune para comprobar si es edificable o agrícola.</li><li>Compara el precio con la zona: si es muy inferior al mercado, desconfía.</li><li>Si el vendedor no entrega estos datos, descártalo.</li></ul></section>';
+}
 function drawDrawer(){
   var d=S.drawer;if(!d)return;
   if(d.type==='terreno'){
     var t=d.id?(S.terrenos.filter(function(x){return x.id===d.id})[0]||{}):(d.prefill||{});
-    var body='<section class="panel" id="live">'+liveHtml(t)+'</section>'+
+    var body=alertHtml(t)+'<section class="panel" id="live">'+liveHtml(t)+'</section>'+
       '<section class="panel" id="mapsp">'+mapsHtml(t)+'</section>'+segHtml(t)+
       '<section class="panel" id="altp">'+altHtml(t.altitud,t.pais)+(altAviso(t)?'<p class="warnline">'+esc(altAviso(t))+'</p>':'')+'</section>'+formHtml(TFIELDS,t)+
       '<section class="panel"'+(t.pais==='Colombia'?' hidden':'')+' id="costp"><h2>Coste de compra como particular</h2><div id="cost">'+costHtml(t.precio)+'</div><label class="chk" style="margin-top:8px"><span style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="agencia" checked> Incluir comisión de agencia</span></label><p class="hint">Estimación. El notaio confirma las cifras finales.</p></section>';
