@@ -211,7 +211,7 @@ body{margin:0}
   <header class="top">
     <div>
       <h1>Cuaderno de Terrenos</h1>
-      <p>Lazio, Umbria y Abruzzo: precios, superficie, normativa y puntuación para decidir.</p>
+      <p>Italia (Lazio, Umbria, Abruzzo) y Colombia (Antioquia): precios, superficie, normativa y puntuación para decidir.</p>
     </div>
     <div id="status" class="off"><i></i><span>Conectando…</span></div>
   </header>
@@ -1452,7 +1452,7 @@ function gmapsUrl(t){
 }
 function mapsHtml(t){
   var c=coordsOf(t),u=String(t.ubicacion||'').trim();
-  return '<h2>Ubicación</h2><p class="muted">'+(c?'Ubicación exacta guardada ('+c[0].toFixed(5)+', '+c[1].toFixed(5)+'). Aparece como pin en la pestaña Mapa.':(u?'No pude leer coordenadas en lo que pegaste. Pega el enlace largo de Google Maps o las coordenadas (por ejemplo 42.4600, 12.3830). Los enlaces cortos (maps.app.goo.gl) no se pueden leer.':'Sin ubicación exacta: el mapa usa el centro del comune. Para fijarla, abre el lugar en Google Maps, copia las coordenadas o el enlace y pégalos en el campo «Ubicación exacta».'))+'</p><p><a class="btn" href="'+esc(gmapsUrl(t))+'" target="_blank" rel="noopener">Abrir en Google Maps ↗</a></p>';
+  return '<h2>Ubicación</h2><p class="muted">'+(c?(t.pais==='Colombia'?'Ubicación guardada, aproximada: varios anuncios comparten el mismo punto (':'Ubicación exacta guardada (')+c[0].toFixed(5)+', '+c[1].toFixed(5)+'). Aparece como pin en la pestaña Mapa.':(u?'No pude leer coordenadas en lo que pegaste. Pega el enlace largo de Google Maps o las coordenadas (por ejemplo 42.4600, 12.3830). Los enlaces cortos (maps.app.goo.gl) no se pueden leer.':'Sin ubicación exacta: el mapa usa el centro del comune. Para fijarla, abre el lugar en Google Maps, copia las coordenadas o el enlace y pégalos en el campo «Ubicación exacta».'))+'</p><p><a class="btn" href="'+esc(gmapsUrl(t))+'" target="_blank" rel="noopener">Abrir en Google Maps ↗</a></p>';
 }
 function geoOf(t){var c=String(t.comune||'').split(' / ')[0].trim().toLowerCase();return GEO[c]||null}
 function vMapa(){
@@ -1595,7 +1595,7 @@ function vTerrenos(){
       '<label class="cmp" data-stop="1"><input type="checkbox" data-act="cmp" data-id="'+esc(t.id)+'"'+(cmpOn?' checked':'')+'> Comparar</label></div>'+
       '<dl class="figs"><div><dt>Precio</dt><dd>'+money(t,t.precio)+(t.precio_nota?'<span class="sub">precio por confirmar</span>':'')+'</dd></div>'+
       '<div><dt>Superficie</dt><dd>'+(t.m2>0?fmt(t.m2)+' m²':'—')+'<span class="sub">'+ha(t.m2)+'</span></dd></div>'+
-      '<div><dt>€ por ha</dt><dd>'+(p!=null?fmt(p):'—')+'</dd></div></dl>'+
+      '<div><dt>'+(t.pais==='Colombia'?'COP por ha':'€ por ha')+'</dt><dd>'+(p!=null?fmt(p):'—')+'</dd></div></dl>'+
       '<div class="tags">'+tagsFor(t)+'</div>'+
       (t.altitud!=null&&!isNaN(t.altitud)?'<p class="cropline"><b>Van bien a '+fmt(t.altitud)+' m:</b> '+esc(cropsFor(Number(t.altitud),t.pais).opt.slice(0,5).map(function(x){return x.n.split(' (')[0]}).join(', ')||'ninguno de la lista')+'</p>':'')+
       segMini(t)+'<div class="card-foot"><span class="pill '+est+'">'+ESTADOS[est]+'</span>'+(t.url?'<a href="'+esc(t.url)+'" target="_blank" rel="noopener" data-stop="1">Ver anuncio ↗</a> ':'')+'<a href="'+esc(gmapsUrl(t))+'" target="_blank" rel="noopener" data-stop="1">Google Maps ↗</a></div></article>';
@@ -1616,7 +1616,7 @@ function vComparar(){
   h+=row('Estado',rows.map(function(r){return r.t.estado||'por_revisar'}),function(v){return ESTADOS[v]});
   h+=row('Precio',rows.map(function(r){return r.t.precio>0?r.t.precio:null}),function(v,i){return '<span class="mono">'+money(rows[i].t,v)+'</span>'+(rows[i].t.precio_nota?'<br><span class="muted">'+esc(rows[i].t.precio_nota)+'</span>':'')},'min');
   h+=row('Superficie',rows.map(function(r){return r.t.m2>0?r.t.m2:null}),function(v){return v==null?'—':'<span class="mono">'+fmt(v)+' m²</span> <span class="muted">'+ha(v)+'</span>'},'max');
-  h+=row('€ por ha',rows.map(function(r){return r.p}),function(v){return v==null?'—':'<span class="mono">'+fmt(v)+'</span>'},'min');
+  h+=row('€ o COP por ha',rows.map(function(r){return r.p}),function(v){return v==null?'—':'<span class="mono">'+fmt(v)+'</span>'},'min');
   h+=row('País',rows.map(function(r){return r.t.pais||'Italia'}),function(v){return esc(OPT.pais[v]||v)});
   h+=row('Zona',rows.map(function(r){return r.t.zona}),function(v){var z=zona(v);return z?esc(z.nombre):'—'});
   [['relieve','Relieve'],['acceso','Acceso'],['agua','Agua'],['luz','Electricidad'],['parque','Parque'],['edif','Edificabilidad']].forEach(function(p){
@@ -1742,7 +1742,7 @@ function collect(schema){
 }
 function liveHtml(t){
   var s=score(t),p=ppha(t),z=zona(t.zona);
-  var h='<div class="live"><div class="live-top">'+ring(s.pct,64)+'<p><b>'+(s.pct==null?'Sin datos suficientes':s.pct+' de 100')+'</b><br>Confianza '+Math.round(s.conf*100)+'% · '+(p!=null?fmt(p)+' €/ha':'€/ha sin calcular')+(z?' frente a '+fmt(z.ref_min)+(z.ref_min===z.ref_max?'':' – '+fmt(z.ref_max))+' de la zona':'')+'</p></div>';
+  var h='<div class="live"><div class="live-top">'+ring(s.pct,64)+'<p><b>'+(s.pct==null?'Sin datos suficientes':s.pct+' de 100')+'</b><br>Confianza '+Math.round(s.conf*100)+'% · '+(p!=null?fmt(p)+(t.pais==='Colombia'?' COP/ha':' €/ha'):'por ha sin calcular')+(z?' frente a '+fmt(z.ref_min)+(z.ref_min===z.ref_max?'':' – '+fmt(z.ref_max))+' de la zona':'')+'</p></div>';
   FACT.forEach(function(f){var v=s.f[f.k];h+='<div class="fbar"><span>'+f.l+'</span><div class="t">'+(v!=null?'<i style="width:'+Math.round(v*100)+'%"></i>':'')+'</div><em>'+(v!=null?Math.round(v*100):'sin dato')+'</em></div>'});
   return h+'</div>';
 }
