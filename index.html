@@ -1576,7 +1576,7 @@ function vTerrenos(){
     function sel(id,lab,arr,cur){return '<select id="'+id+'" aria-label="'+lab+'">'+arr.map(function(x){return '<option value="'+x[0]+'"'+(String(cur)===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('')+'</select>'}
     var ms={};S.terrenos.forEach(function(t){if(t.pais==='Colombia'&&t.comune)ms[segKey(t.comune)]=t.comune});
     var ml=[['','Todos los municipios']].concat(Object.keys(ms).sort().map(function(k){return[k,ms[k]]}));
-    cx=sel('fcm','Precio máximo COP',[['','Cualquier precio (COP)'],['100000000','Hasta 100 millones'],['200000000','Hasta 200 millones'],['300000000','Hasta 300 millones'],['500000000','Hasta 500 millones'],['700000000','Hasta 700 millones'],['900000000','Hasta 900 millones'],['1500000000','Hasta 1.500 millones'],['2000000000','Hasta 2.000 millones'],['3000000000','Hasta 3.000 millones']],S.f.cpmax)+
+    cx=sel('fcm','Precio máximo COP',[['','Cualquier precio (COP)'],['100000000','Hasta 100 millones'],['200000000','Hasta 200 millones'],['300000000','Hasta 300 millones'],['500000000','Hasta 500 millones'],['700000000','Hasta 700 millones'],['900000000','Hasta 900 millones']],S.f.cpmax)+
       sel('fch','Superficie mínima',[['','Cualquier superficie'],['1','Mínimo 1 ha'],['2','Mínimo 2 ha'],['3','Mínimo 3 ha'],['5','Mínimo 5 ha']],S.f.cha)+
       sel('fcmu','Municipio',ml,S.f.muni)+
       sel('fcs','Seguridad',[['','Toda seguridad'],['0','Solo riesgo bajo'],['1','Hasta riesgo moderado'],['2','Hasta riesgo alto'],['sin','Sin información']],S.f.seg);
