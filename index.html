@@ -216,6 +216,7 @@ body{margin:0}
   </header>
   <nav class="tabs" aria-label="Secciones">
     <button data-tab="terrenos">Terrenos</button>
+    <button data-tab="mapa">Mapa</button>
     <button data-tab="comparar">Comparar <span class="n" id="ncmp" hidden></span></button>
     <button data-tab="zonas">Zonas y normativa</button>
     <button data-tab="biblioteca">Biblioteca</button>
@@ -228,6 +229,8 @@ body{margin:0}
 
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 (function(){
 'use strict';
@@ -1164,6 +1167,59 @@ function vComparativa(){
   h+='<section class="panel"><h2>Fuentes</h2><ul class="rules"><li><a href="https://www.dineroeneltiempo.com/divisas/eur-cop/historico/2026" target="_blank" rel="noopener">Euro en Colombia 2026, histórico</a></li><li><a href="https://www.infobae.com/colombia/2026/10/20/euro-hoy-en-colombia-cotizacion-de-cierre-del-20-de-octubre/" target="_blank" rel="noopener">Euro hoy en Colombia, cierre del 20 de octubre (Infobae)</a></li></ul></section>';
   return h;
 }
+
+/* ---------- Mapa ---------- */
+/* Coordenadas aproximadas del centro de cada comune o municipio (de memoria, ±5 km). */
+var GEO={
+ 'bagnoregio':[42.628,12.109],'bassano romano':[42.220,12.178],'blera':[42.273,12.039],'bomarzo':[42.491,12.247],
+ 'campo di giove':[42.017,14.000],'canino':[42.467,11.750],'capodimonte':[42.550,11.917],'capranica':[42.258,12.175],
+ 'caprarola':[42.325,12.235],'castel di sangro':[41.783,14.100],'castel sant\'elia':[42.250,12.383],'celleno':[42.583,12.233],
+ 'cellere':[42.517,11.817],'cellino attanasio':[42.533,13.883],'città di castello':[43.456,12.241],'civita castellana':[42.293,12.410],
+ 'corfinio':[42.117,13.850],'fabrica di roma':[42.317,12.283],'faleria':[42.217,12.417],'farnese':[42.583,11.733],
+ 'gallese':[42.383,12.417],'gradoli':[42.642,11.850],'grotte santo stefano':[42.490,12.140],'ischia di castro':[42.567,11.717],
+ 'marta':[42.533,11.933],'montalto di castro':[42.350,11.617],'monte romano':[42.267,11.917],'montefiascone':[42.539,12.034],
+ 'monterosi':[42.200,12.300],'nepi':[42.240,12.350],'onano':[42.683,11.817],'oriolo romano':[42.167,12.100],
+ 'orte':[42.460,12.383],'perugia':[43.111,12.391],'pescocostanzo':[41.883,14.067],'piansano':[42.550,11.883],
+ 'raiano':[42.083,13.850],'san lorenzo nuovo':[42.683,11.983],'soriano nel cimino':[42.417,12.233],'sutri':[42.240,12.217],
+ 'tarquinia':[42.250,11.750],'tuscania':[42.417,11.867],'vallerano':[42.417,12.267],'vasanello':[42.417,12.350],
+ 'vejano':[42.283,12.100],'vetralla':[42.317,12.067],'vignanello':[42.383,12.283],'viterbo':[42.417,12.105],
+ 'vitorchiano':[42.467,12.167],
+ 'rionegro':[6.155,-75.374],'marinilla':[6.174,-75.336],'el retiro':[6.060,-75.503],'la ceja':[6.032,-75.431],
+ 'guarne':[6.279,-75.441],'san vicente ferrer':[6.283,-75.333],'jericó':[5.789,-75.786],'fredonia':[5.927,-75.674],
+ 'venecia':[5.965,-75.736],'andes':[5.656,-75.879],'jardín':[5.598,-75.819],'santa rosa de osos':[6.644,-75.462],
+ 'yarumal':[6.964,-75.421],'támesis':[5.664,-75.715]
+};
+function geoOf(t){var c=String(t.comune||'').split(' / ')[0].trim().toLowerCase();return GEO[c]||null}
+function vMapa(){
+  var list=visibles(),by={},sin=[];
+  list.forEach(function(t){var g=geoOf(t);if(!g){sin.push(t);return}var k=String(t.comune).split(' / ')[0].trim();(by[k]=by[k]||{g:g,t:[]}).t.push(t)});
+  S.mapData=by;
+  return '<section class="panel"><h2>Mapa de terrenos</h2><p class="muted">Cada círculo es un comune o municipio. El tamaño indica cuántos terrenos hay y el color, la mejor puntuación: verde desde 70, ámbar desde 50, gris por debajo o sin datos. Respeta los filtros de la pestaña Terrenos. Toca un círculo para ver los terrenos.</p>'+
+   '<div id="map" style="height:68vh;min-height:360px;border-radius:12px;border:1px solid var(--line)"></div>'+
+   '<p class="hint">Las ubicaciones son aproximadas al centro del comune o municipio (error de unos 5 km) y no marcan la parcela exacta. '+(sin.length?sin.length+' terrenos no se muestran porque no tengo coordenadas de su comune ('+Array.from(new Set(sin.map(function(t){return t.comune||'sin comune'}))).map(esc).join(', ')+').':'')+'</p></section>';
+}
+function mapInit(){
+  var el=$('map');if(!el)return;
+  if(typeof L==='undefined'){el.innerHTML='<p class="muted" style="padding:16px">No se pudo cargar el mapa. Revisa tu conexión e inténtalo de nuevo.</p>';return}
+  if(S.map){try{S.map.remove()}catch(e){}S.map=null}
+  var m=L.map(el,{scrollWheelZoom:false}).setView([42.35,12.2],8);S.map=m;
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(m);
+  var pts=[];
+  Object.keys(S.mapData||{}).forEach(function(k){
+    var d=S.mapData[k],best=null;
+    d.t.forEach(function(t){var sc=score(t).pct;if(sc!=null&&(best==null||sc>best))best=sc});
+    var col=best==null?'#8a8f98':best>=70?'#2e8b57':best>=50?'#d99a1e':'#8a8f98';
+    var ps=d.t.map(function(t){return ppha(t)}).filter(function(x){return x!=null});
+    var rng=ps.length?'Entre '+fmt(Math.round(Math.min.apply(null,ps)))+' y '+fmt(Math.round(Math.max.apply(null,ps)))+' por ha':'';
+    var top=d.t.slice().sort(function(a,b){return (score(b).pct||0)-(score(a).pct||0)}).slice(0,6);
+    var html='<b>'+esc(k)+'</b> · '+d.t.length+' terreno'+(d.t.length>1?'s':'')+'<br><span style="font-size:12px">'+esc(rng)+'</span><div style="margin-top:6px">'+top.map(function(t){var sc=score(t).pct;return '<div style="margin:3px 0"><a role="button" tabindex="0" style="cursor:pointer;text-decoration:underline" data-act="abrir" data-id="'+esc(t.id)+'">'+esc(t.nombre||t.id)+'</a> <span style="font-size:12px">'+(sc!=null?sc+'/100':'')+' · '+esc(money(t,t.precio))+'</span></div>'}).join('')+(d.t.length>6?'<div style="font-size:12px">y '+(d.t.length-6)+' más</div>':'')+'</div>';
+    L.circleMarker(d.g,{radius:Math.min(26,8+Math.sqrt(d.t.length)*4),color:col,fillColor:col,fillOpacity:.55,weight:2}).addTo(m).bindPopup(html);
+    pts.push(d.g);
+  });
+  if(pts.length>1){var it=pts.filter(function(g){return g[0]>30}),co=pts.filter(function(g){return g[0]<30});m.fitBounds(L.latLngBounds(it.length?it:co),{padding:[30,30]})}
+  else if(pts.length===1)m.setView(pts[0],11);
+  setTimeout(function(){m.invalidateSize()},50);
+}
 function vBiblioteca(){
   var D=apiD(),co=S.lib.pais==='Colombia',PASOS=co?PASOS_CO:PASOS_ES,LEG=co?LEGAL_CO:LEGAL_ES,FUE=co?FUENTES_CO:FUENTES_ES;
   var h='<div class="stack">';
@@ -1365,8 +1421,9 @@ function render(){
   statusHtml();
   document.querySelectorAll('[data-tab]').forEach(function(b){b.setAttribute('aria-current',b.dataset.tab===S.view?'page':'false')});
   var n=S.compare.length,nc=$('ncmp');nc.hidden=!n;nc.textContent=n;
-  var fn={terrenos:vTerrenos,comparar:vComparar,zonas:vZonas,biblioteca:vBiblioteca,criterios:vCriterios}[S.view];
+  var fn={terrenos:vTerrenos,mapa:vMapa,comparar:vComparar,zonas:vZonas,biblioteca:vBiblioteca,criterios:vCriterios}[S.view];
   $('view').innerHTML=fn();
+  if(S.view==='mapa')mapInit();
 }
 /* ---------- Cajón ---------- */
 function fieldHtml(f,v){
