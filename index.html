@@ -525,6 +525,7 @@ function ring(pct,size){
 }
 function tagsFor(t){
   var a=[];
+  if(t.alerta==='si')a.push(['⚠ Alerta: verificar antes de avanzar','bad']);
   if(t.relieve==='llano')a.push(['Llano','good']);else if(t.relieve==='ladera')a.push(['Ladera','bad']);else if(t.relieve==='leve'||t.relieve==='medio')a.push([OPT.relieve[t.relieve],'']);
   if(t.agua==='riego'||t.agua==='pozo'||t.agua==='red'||t.agua==='nacimiento'||t.agua==='quebrada'||t.agua==='acueducto')a.push([OPT.agua[t.agua],'good']);else if(t.agua==='ninguna')a.push(['Sin agua','bad']);else if(t.agua==='fosso')a.push(['Arroyo','warn']);
   if(t.luz==='si')a.push(['Electricidad','good']);else if(t.luz==='no')a.push(['Sin electricidad','bad']);
@@ -1608,7 +1609,7 @@ function vTerrenos(){
       '<div><dt>'+(t.pais==='Colombia'?'COP por ha':'€ por ha')+'</dt><dd>'+(p!=null?fmt(p):'—')+'</dd></div></dl>'+
       '<div class="tags">'+tagsFor(t)+'</div>'+
       (t.altitud!=null&&!isNaN(t.altitud)?'<p class="cropline"><b>Van bien a '+fmt(t.altitud)+' m:</b> '+esc(cropsFor(Number(t.altitud),t.pais).opt.slice(0,5).map(function(x){return x.n.split(' (')[0]}).join(', ')||'ninguno de la lista')+'</p>':'')+
-      segMini(t)+'<div class="card-foot">'+(t.alerta==='si'?'<span class="alertpill" title="Verifica antes de avanzar">⚠ Alerta</span>':'')+'<span class="pill '+est+'">'+ESTADOS[est]+'</span>'+(t.url?'<a href="'+esc(t.url)+'" target="_blank" rel="noopener" data-stop="1">Ver anuncio ↗</a> ':'')+'<a href="'+esc(gmapsUrl(t))+'" target="_blank" rel="noopener" data-stop="1">Google Maps ↗</a></div></article>';
+      segMini(t)+'<div class="card-foot">'+'<span class="pill '+est+'">'+ESTADOS[est]+'</span>'+(t.url?'<a href="'+esc(t.url)+'" target="_blank" rel="noopener" data-stop="1">Ver anuncio ↗</a> ':'')+'<a href="'+esc(gmapsUrl(t))+'" target="_blank" rel="noopener" data-stop="1">Google Maps ↗</a></div></article>';
   }).join('')+'</div>';
   return h;
 }
