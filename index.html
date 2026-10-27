@@ -1563,7 +1563,7 @@ function visibles(){
   a.sort(function(x,y){
     function nul(v,d){return v==null?(d==='asc'?Infinity:-Infinity):v}
     if(o==='seg'){var gx=segOf(x.t),gy=segOf(y.t);return (gx?gx.s:1e3)-(gy?gy.s:1e3)}
-    if(o==='score')return nul(y.s.pct,'desc')-nul(x.s.pct,'desc');
+    if(o==='score'){var ax=x.t.alerta==='si'?1:0,ay=y.t.alerta==='si'?1:0;if(ax!==ay)return ax-ay;return nul(y.s.pct,'desc')-nul(x.s.pct,'desc')}
     if(o==='precio')return nul(x.t.precio,'asc')-nul(y.t.precio,'asc');
     if(o==='pha')return nul(x.p,'asc')-nul(y.p,'asc');
     if(o==='m2')return nul(y.t.m2,'desc')-nul(x.t.m2,'desc');
