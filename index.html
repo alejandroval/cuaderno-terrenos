@@ -1973,9 +1973,17 @@ function dbShim(){
     collection:function(col){var t=TABLA[col];return{
       doc:function(id){return docRef(col,id)},
       onSnapshot:function(cb,err){
-        async function load(){var r=await sb.from(t).select('id,data').order('id');
-          if(r.error){err&&err(r.error);return}
-          cb({docs:r.data.map(mkSnapDoc)})}
+        async function load(){
+          /* Supabase entrega como máximo 1000 filas por consulta: se pide por tandas hasta traerlo todo */
+          var rows=[],from=0,PAG=1000;
+          for(;;){
+            var r=await sb.from(t).select('id,data').order('id').range(from,from+PAG-1);
+            if(r.error){err&&err(r.error);return}
+            rows=rows.concat(r.data);
+            if(r.data.length<PAG)break;
+            from+=PAG;
+          }
+          cb({docs:rows.map(mkSnapDoc)})}
         load();sb.channel('c-'+t).on('postgres_changes',{event:'*',schema:'public',table:t},load).subscribe();
       }}},
     doc:function(path){var p=path.split('/');return docRef(p[0],p[1])}
